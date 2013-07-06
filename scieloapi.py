@@ -33,6 +33,8 @@ class Connector(object):
         # setup
         if not api_uri:
             self.api_uri = r'http://manager.scielo.org/api/'
+        else:
+            self.api_uri = api_uri
 
         if version and version in API_VERSIONS:
             self.version = version
@@ -115,6 +117,12 @@ class Connector(object):
             else:
                 offset += ITEMS_PER_REQUEST
 
+    def get_endpoints(self):
+        """
+        Get all endpoints available for the given API version.
+        """
+        return getattr(self._api, '').get()
+
 
 class Endpoint(object):
     def __init__(self, name, connector):
@@ -135,6 +143,10 @@ class Endpoint(object):
 class Client(object):
     """
     Collection of endpoints made available in an object oriented fashion.
+
+    An instance of Client tries to figure out the available endpoints
+    for the version of the API the Client is instantiated for. If ``version``
+    is missing, the default behaviour is to use the most recent version.
     """
     def __init__(self,
                  username,
@@ -146,15 +158,27 @@ class Client(object):
                                     api_key,
                                     api_uri=api_uri,
                                     version=version)
+        self._endpoints = {}
+        for ep in self._introspect_endpoints():
+            self._endpoints[ep] = Endpoint(ep, self._connector)
 
-        self.journals = Endpoint('journals', self._connector)
-        self.issues = Endpoint('issues', self._connector)
-        self.changes = Endpoint('changes', self._connector)
-        self.collections = Endpoint('collections', self._connector)
-        self.apressreleases = Endpoint('apressreleases', self._connector)
-        self.pressreleases = Endpoint('pressreleases', self._connector)
-        self.sections = Endpoint('sections', self._connector)
-        self.sponsors = Endpoint('sponsors', self._connector)
-        self.uselicenses = Endpoint('uselicenses', self._connector)
-        self.users = Endpoint('users', self._connector)
+    def _introspect_endpoints(self):
+        """
+        Contact the API server to discover the available endpoints.
+        """
+        return self._connector.get_endpoints().keys()
+
+    def __getattr__(self, name):
+        """
+        Missing attributes are assumed to be endpoint lookups.
+        i.e. Client.journals.all()
+        """
+        if name in self._endpoints:
+            return self._endpoints[name]
+        else:
+            raise AttributeError()
+
+    @property
+    def endpoints(self):
+        return self._endpoints.keys()
 
