@@ -3,6 +3,8 @@ scieloapi.py
 
 Thin wrapper around the SciELO Manager RESTful API.
 
+[![Build Status](https://travis-ci.org/scieloorg/scieloapi.py.png?branch=master)](https://travis-ci.org/scieloorg/scieloapi.py)
+
 Usage example:
 
     import scieloapi
