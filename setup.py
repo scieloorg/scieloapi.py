@@ -22,4 +22,5 @@ setup(
     ],
     tests_require=["mocker"],
     test_suite='tests',
+    install_requires=['slumber'],
 )
