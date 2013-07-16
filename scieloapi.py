@@ -21,6 +21,9 @@ class Connector(object):
     """
     Encapsulates the HTTP requests layer.
     """
+    # caches endpoints definitions
+    _cache = {}
+
     def __init__(self,
                  username,
                  api_key,
@@ -36,8 +39,11 @@ class Connector(object):
         else:
             self.api_uri = api_uri
 
-        if version and version in API_VERSIONS:
-            self.version = version
+        if version :
+            if version in API_VERSIONS:
+                self.version = version
+            else:
+                raise ValueError('unsupported api version. supported are: %s' % ', '.join(API_VERSIONS))
         else:
             self.version = sorted(API_VERSIONS)[-1]
 
@@ -79,6 +85,9 @@ class Connector(object):
                 else:
                     logger.error('Unable to connect to resource (%s).' % exc)
                     raise ResourceUnavailableError(exc)
+            except slumber.exceptions.HttpClientError as exc:
+                logger.error('Unable to connect to resource (%s).' % exc)
+                raise ResourceUnavailableError(exc)
             else:
                 err_count = 0
 
@@ -121,7 +130,15 @@ class Connector(object):
         """
         Get all endpoints available for the given API version.
         """
-        return getattr(self._api, '').get()
+        cls = self.__class__
+
+        if self.version not in cls._cache:
+            try:
+                cls._cache[self.version] = getattr(self._api, '').get()
+            except slumber.exceptions.HttpClientError as exc:
+                raise ResourceUnavailableError(exc)
+
+        return cls._cache[self.version]
 
 
 class Endpoint(object):

@@ -85,6 +85,36 @@ class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
         res = conn.fetch_data('journals', resource_id=1, collection='saude-publica')
         self.assertIn('title', res)
 
+    def test_unsupported_api_version_raises_ValueError(self):
+        mock_slumber = self.mocker.mock()
+        self.mocker.replay()
+
+        self.assertRaises(ValueError,
+            lambda: self._makeOne('any.username',
+                                  'any.apikey',
+                                  slumber_dep=mock_slumber,
+                                  version='vFoo'))
+
+    def test_unsupported_api_version_at_API_VERSIONS_raises_ResourceUnavailableError(self):
+        import scieloapi, slumber
+        mock_slumber = self.mocker.mock()
+
+        mock_slumber.API('http://manager.scielo.org/api/v1/')
+        self.mocker.result(mock_slumber)
+
+        mock_slumber.journals
+        self.mocker.result(mock_slumber)
+
+        mock_slumber.get(api_key='any.apikey', username='any.username')
+        self.mocker.throw(slumber.exceptions.HttpClientError)
+
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
+
+        self.assertRaises(scieloapi.ResourceUnavailableError,
+                          lambda: conn.fetch_data('journals'))
+
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
         'title': u'ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)'
