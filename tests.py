@@ -95,7 +95,7 @@ class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
                                   slumber_dep=mock_slumber,
                                   version='vFoo'))
 
-    def test_unsupported_api_version_at_API_VERSIONS_raises_ResourceUnavailableError(self):
+    def test_unsupported_api_version_at_API_VERSIONS_raises_RequestError(self):
         import scieloapi, slumber
         mock_slumber = self.mocker.mock()
 
@@ -112,7 +112,7 @@ class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
 
         conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
 
-        self.assertRaises(scieloapi.ResourceUnavailableError,
+        self.assertRaises(scieloapi.RequestError,
                           lambda: conn.fetch_data('journals'))
 
 class EndpointTests(mocker.MockerTestCase):

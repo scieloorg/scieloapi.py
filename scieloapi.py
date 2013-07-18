@@ -13,8 +13,11 @@ API_VERSIONS = ('v1',)
 
 
 class ResourceUnavailableError(Exception):
-    def __init__(self, *args, **kwargs):
-        super(ResourceUnavailableError, self).__init__(*args, **kwargs)
+    pass
+
+
+class RequestError(Exception):
+    pass
 
 
 class Connector(object):
@@ -86,8 +89,8 @@ class Connector(object):
                     logger.error('Unable to connect to resource (%s).' % exc)
                     raise ResourceUnavailableError(exc)
             except slumber.exceptions.HttpClientError as exc:
-                logger.error('Unable to connect to resource (%s).' % exc)
-                raise ResourceUnavailableError(exc)
+                logger.error('Bad request: %s' % exc)
+                raise RequestError(exc)
             else:
                 err_count = 0
 
