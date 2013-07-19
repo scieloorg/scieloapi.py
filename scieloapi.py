@@ -1,4 +1,5 @@
 # coding: utf-8
+import re
 import logging
 import time
 
@@ -201,4 +202,42 @@ class Client(object):
     @property
     def endpoints(self):
         return self._endpoints.keys()
+
+    def fetch_relations(self, dataset):
+        new_dataset = {}
+        uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
+
+        for k, v in dataset.items():
+            # skip fetching itself
+            if k == 'resource_uri':
+                continue
+
+            if isinstance(v, basestring):
+                match = uri_pattern.match(v)
+                if match:
+                    match_group = match.groups()
+                    try:
+                        new_dataset[k] = getattr(self, match_group[1]).get(match_group[2])
+                    except AttributeError:
+                        new_dataset[k] = v
+            elif isinstance(v, list):
+                new_elems = []
+                for elem in v:
+                    try:
+                        match = uri_pattern.match(elem)
+                    except TypeError as exc:
+                        continue
+                    if match:
+                        match_group = match.groups()
+                        try:
+                            new_elems.append(getattr(self, match_group[1]).get(match_group[2]))
+                        except AttributeError:
+                            new_elems.append(elem)
+                    else:
+                        new_elems.append(elem)
+                new_dataset[k] = new_elems
+            else:
+                new_dataset[k] = v
+
+        return new_dataset
 
