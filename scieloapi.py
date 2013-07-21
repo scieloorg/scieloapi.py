@@ -201,43 +201,56 @@ class Client(object):
 
     @property
     def endpoints(self):
+        """
+        Lists all available endpoints for the api version
+        the Client was created to interact.
+        """
         return self._endpoints.keys()
 
     def fetch_relations(self, dataset):
+        """
+        Returns a new dataset with all relations to
+        resources changed by the actual resource data.
+        """
         new_dataset = {}
-        uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
 
-        for k, v in dataset.items():
+        for attr_name, attr_value in dataset.items():
             # skip fetching itself
-            if k == 'resource_uri':
-                continue
+            if attr_name == 'resource_uri':
+                new_dataset[attr_name] = attr_value
+            elif isinstance(attr_value, basestring):
+                try:
+                    new_dataset[attr_name] = self.get(attr_value)
+                except ValueError as e:
+                    new_dataset[attr_name] = attr_value
 
-            if isinstance(v, basestring):
-                match = uri_pattern.match(v)
-                if match:
-                    match_group = match.groups()
-                    try:
-                        new_dataset[k] = getattr(self, match_group[1]).get(match_group[2])
-                    except AttributeError:
-                        new_dataset[k] = v
-            elif isinstance(v, list):
+            elif isinstance(attr_value, list):
                 new_elems = []
-                for elem in v:
+                for elem in attr_value:
                     try:
-                        match = uri_pattern.match(elem)
-                    except TypeError as exc:
-                        continue
-                    if match:
-                        match_group = match.groups()
-                        try:
-                            new_elems.append(getattr(self, match_group[1]).get(match_group[2]))
-                        except AttributeError:
-                            new_elems.append(elem)
-                    else:
+                        new_elems.append(self.get(elem))
+                    except (TypeError, ValueError) as e:
                         new_elems.append(elem)
-                new_dataset[k] = new_elems
+
+                new_dataset[attr_name] = new_elems
             else:
-                new_dataset[k] = v
+                new_dataset[attr_name] = attr_value
 
         return new_dataset
+
+    def get(self, resource_uri):
+        """
+        Gets data for resource_uri.
+        """
+        uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
+        match = uri_pattern.match(resource_uri)
+        if match:
+            match_group = match.groups()
+            try:
+                return getattr(self, match_group[1]).get(match_group[2])
+            except AttributeError:
+                # AttributeError is raised if getattr fails to lookup the endpoint
+                raise ValueError('Unknown endpoint %s' % match_group[1])
+        else:
+            raise ValueError('Invalid resource_uri')
 
