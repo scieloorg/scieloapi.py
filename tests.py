@@ -1,4 +1,5 @@
 # coding: utf-8
+import unittest
 import mocker
 
 
@@ -132,3 +133,54 @@ class EndpointTests(mocker.MockerTestCase):
 
         journal_ep = self._makeOne('journals', mock_connector)
         self.assertEqual(journal_ep.get(1), self.valid_microset)
+
+
+class ClientTests(mocker.MockerTestCase):
+
+    @unittest.skip('')
+    def test_connector_instance_created_during_initialization(self):
+        pass
+
+    @unittest.skip('')
+    def test_endpoints_introspected_during_initialization(self):
+        pass
+
+    @unittest.skip('')
+    def test_missing_attributes_are_handled_as_endpoints(self):
+        pass
+
+    @unittest.skip('')
+    def test_unknown_missing_attribute_raises_AttributeError(self):
+        pass
+
+    @unittest.skip('')
+    def test_username_and_apikey_are_mandatory_during_initialization(self):
+        pass
+
+    @unittest.skip('')
+    def test_api_uri_parameterized_during_initialization(self):
+        pass
+
+    @unittest.skip('')
+    def test_api_uri_defaults_to_manager_scielo_org(self):
+        pass
+
+    @unittest.skip('')
+    def test_version_parameterized_during_initialization(self):
+        pass
+
+    @unittest.skip('')
+    def test_version_restricted_to_API_VERSIONS(self):
+        pass
+
+    @unittest.skip('')
+    def test_missing_version_defaults_to_newest(self):
+        pass
+
+    @unittest.skip('')
+    def test_invalid_credentials_raises_Unauthorized(self):
+        """
+        See https://github.com/scieloorg/scieloapi.py/issues/1
+        """
+        pass
+

@@ -67,7 +67,7 @@ class Connector(object):
         """
         err_count = 0
 
-        if all([self.username, self.api_key]):
+        if self.username and self.api_key:
             kwargs['username'] = self.username
             kwargs['api_key'] = self.api_key
 
@@ -241,6 +241,11 @@ class Client(object):
     def get(self, resource_uri):
         """
         Gets data for resource_uri.
+
+        `resource_uri` is a text string in the form
+        "/api/<version>/<endpoint>/<resource_id>/". The <version>
+        must match with Client's or a ValueError will be raised.
+        The same goes to unknown endpoints and invalid `resource_uris`.
         """
         uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
         match = uri_pattern.match(resource_uri)
