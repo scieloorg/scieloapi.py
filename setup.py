@@ -7,13 +7,18 @@ except ImportError:
 
 setup(
     name="scieloapi",
-    version='0.1',
+    version='0.2',
     description="Thin wrapper around the SciELO Manager RESTful API.",
-    author="Gustavo Fonseca",
-    author_email="gustavofons@gmail.com",
-    license="BSD",
+    long_description=open('README.md').read() + '\n\n' +
+                     open('HISTORY.md').read(),
+    author="SciELO",
+    author_email="scielo-dev@googlegroups.com",
+    license=open('LICENSE').read(),
     url="http://docs.scielo.org",
-    py_modules=["scieloapi"],
+    packages=['scieloapi'],
+    package_data={'': ['LICENSE']},
+    package_dir={'scieloapi': 'scieloapi'},
+    include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -24,3 +29,4 @@ setup(
     test_suite='tests',
     install_requires=['slumber'],
 )
+

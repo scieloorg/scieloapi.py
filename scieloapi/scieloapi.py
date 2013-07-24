@@ -6,19 +6,13 @@ import time
 import slumber
 import requests
 
+import exceptions
+
 
 logger = logging.getLogger(__name__)
 
 ITEMS_PER_REQUEST = 50
 API_VERSIONS = ('v1',)
-
-
-class ResourceUnavailableError(Exception):
-    pass
-
-
-class RequestError(Exception):
-    pass
 
 
 class Connector(object):
@@ -88,10 +82,10 @@ class Connector(object):
                     continue
                 else:
                     logger.error('Unable to connect to resource (%s).' % exc)
-                    raise ResourceUnavailableError(exc)
+                    raise exceptions.ResourceUnavailableError(exc)
             except slumber.exceptions.HttpClientError as exc:
                 logger.error('Bad request: %s' % exc)
-                raise RequestError(exc)
+                raise exceptions.RequestError(exc)
             else:
                 err_count = 0
 
@@ -140,7 +134,7 @@ class Connector(object):
             try:
                 cls._cache[self.version] = getattr(self._api, '').get()
             except slumber.exceptions.HttpClientError as exc:
-                raise ResourceUnavailableError(exc)
+                raise exceptions.ResourceUnavailableError(exc)
 
         return cls._cache[self.version]
 
