@@ -2,6 +2,8 @@
 import unittest
 import mocker
 
+from scieloapi import exceptions
+
 
 class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
     valid_full_microset = {
@@ -113,7 +115,7 @@ class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
 
         conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
 
-        self.assertRaises(scieloapi.RequestError,
+        self.assertRaises(exceptions.RequestError,
                           lambda: conn.fetch_data('journals'))
 
 class EndpointTests(mocker.MockerTestCase):
