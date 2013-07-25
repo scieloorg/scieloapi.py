@@ -25,8 +25,9 @@ setup(
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
+    setup_requires=["nose>=1.0", "coverage"],
     tests_require=["mocker"],
-    test_suite='tests',
-    install_requires=['slumber'],
+    test_suite='nose.collector',
+    install_requires=['requests'],
 )
 

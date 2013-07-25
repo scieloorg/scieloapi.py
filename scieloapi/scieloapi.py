@@ -3,9 +3,9 @@ import re
 import logging
 import time
 
-import slumber
-import requests
+import requests #leak, httpbroker must isolate requests lib
 
+import httpbroker
 import exceptions
 
 
@@ -26,16 +26,12 @@ class Connector(object):
                  username,
                  api_key,
                  api_uri=None,
-                 version=None,
-                 slumber_dep=slumber):
+                 version=None):
         # dependencies
-        self._slumber_lib = slumber_dep
+        self._httpbroker = httpbroker
 
         # setup
-        if not api_uri:
-            self.api_uri = r'http://manager.scielo.org/api/'
-        else:
-            self.api_uri = api_uri
+        self.api_uri = api_uri if api_uri else r'http://manager.scielo.org/api/'
 
         if version :
             if version in API_VERSIONS:
@@ -48,7 +44,6 @@ class Connector(object):
         self.username = username
         self.api_key = api_key
         self.api_uri = self.api_uri + self.version + '/'
-        self._api = self._slumber_lib.API(self.api_uri)
 
     def fetch_data(self, endpoint,
                          resource_id=None,
@@ -65,14 +60,13 @@ class Connector(object):
             kwargs['username'] = self.username
             kwargs['api_key'] = self.api_key
 
-        resource = getattr(self._api, endpoint)
-
-        if resource_id:
-            resource = resource(resource_id)
-
         while True:
             try:
-                return resource.get(**kwargs)
+                return self._httpbroker.get(self.api_uri,
+                                            endpoint=endpoint,
+                                            resource_id=resource_id,
+                                            params=kwargs)
+
             except requests.exceptions.ConnectionError as exc:
                 if err_count < 10:
                     wait_secs = err_count * 5
@@ -83,7 +77,7 @@ class Connector(object):
                 else:
                     logger.error('Unable to connect to resource (%s).' % exc)
                     raise exceptions.ResourceUnavailableError(exc)
-            except slumber.exceptions.HttpClientError as exc:
+            except requests.exceptions.HTTPError as exc:
                 logger.error('Bad request: %s' % exc)
                 raise exceptions.RequestError(exc)
             else:
@@ -132,8 +126,8 @@ class Connector(object):
 
         if self.version not in cls._cache:
             try:
-                cls._cache[self.version] = getattr(self._api, '').get()
-            except slumber.exceptions.HttpClientError as exc:
+                cls._cache[self.version] = self._httpbroker.get(self.api_uri)
+            except requests.exceptions.HTTPError as exc:
                 raise exceptions.ResourceUnavailableError(exc)
 
         return cls._cache[self.version]

@@ -3,9 +3,10 @@ import unittest
 import mocker
 
 from scieloapi import exceptions
+import doubles
 
 
-class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
+class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
     valid_full_microset = {
         'objects': [
             {
@@ -23,100 +24,85 @@ class ConnectorSlumberCollaborationTests(mocker.MockerTestCase):
         return Connector(*args, **kwargs)
 
     def test_fetching_all_docs_of_an_endpoint(self):
-        mock_slumber = self.mocker.mock()
+        mock_httpbroker = self.mocker.mock()
 
-        mock_slumber.API('http://manager.scielo.org/api/v1/')
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.journals
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.get(api_key='any.apikey', username='any.username')
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={'username': 'any.username', 'api_key': 'any.apikey'},
+                            resource_id=None)
         self.mocker.result(self.valid_full_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
+        conn = self._makeOne('any.username', 'any.apikey')
 
-        res = conn.fetch_data('journals')
-        self.assertTrue('objects' in res)
-        self.assertTrue(len(res['objects']), 1)
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            res = conn.fetch_data('journals')
+            self.assertTrue('objects' in res)
+            self.assertTrue(len(res['objects']), 1)
 
     def test_single_document_of_an_endpoint(self):
-        mock_slumber = self.mocker.mock()
+        mock_httpbroker = self.mocker.mock()
 
-        mock_slumber.API('http://manager.scielo.org/api/v1/')
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.journals
-        self.mocker.result(mock_slumber)
-
-        mock_slumber(1)
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.get(api_key='any.apikey', username='any.username')
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={'username': 'any.username', 'api_key': 'any.apikey'},
+                            resource_id=1)
         self.mocker.result(self.valid_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
+        conn = self._makeOne('any.username', 'any.apikey')
 
-        res = conn.fetch_data('journals', resource_id=1)
-        self.assertIn('title', res)
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            res = conn.fetch_data('journals', resource_id=1)
+            self.assertIn('title', res)
 
     def test_fetch_data_with_querystring_params(self):
-        mock_slumber = self.mocker.mock()
+        mock_httpbroker = self.mocker.mock()
 
-        mock_slumber.API('http://manager.scielo.org/api/v1/')
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.journals
-        self.mocker.result(mock_slumber)
-
-        mock_slumber(1)
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.get(api_key='any.apikey',
-                         username='any.username',
-                         collection='saude-publica')
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={
+                                'username': 'any.username',
+                                'api_key': 'any.apikey',
+                                'collection': 'saude-publica',
+                            },
+                            resource_id=1)
         self.mocker.result(self.valid_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
+        conn = self._makeOne('any.username', 'any.apikey')
 
-        res = conn.fetch_data('journals', resource_id=1, collection='saude-publica')
-        self.assertIn('title', res)
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            res = conn.fetch_data('journals', resource_id=1, collection='saude-publica')
+            self.assertIn('title', res)
 
     def test_unsupported_api_version_raises_ValueError(self):
-        mock_slumber = self.mocker.mock()
-        self.mocker.replay()
-
         self.assertRaises(ValueError,
             lambda: self._makeOne('any.username',
                                   'any.apikey',
-                                  slumber_dep=mock_slumber,
                                   version='vFoo'))
 
     def test_unsupported_api_version_at_API_VERSIONS_raises_RequestError(self):
-        import scieloapi, slumber
-        mock_slumber = self.mocker.mock()
-
-        mock_slumber.API('http://manager.scielo.org/api/v1/')
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.journals
-        self.mocker.result(mock_slumber)
-
-        mock_slumber.get(api_key='any.apikey', username='any.username')
-        self.mocker.throw(slumber.exceptions.HttpClientError)
-
+        import requests
+        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={
+                                'username': 'any.username',
+                                'api_key': 'any.apikey',
+                            },
+                            resource_id=None)
+        self.mocker.throw(requests.exceptions.HTTPError)
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey', slumber_dep=mock_slumber)
+        conn = self._makeOne('any.username', 'any.apikey')
 
-        self.assertRaises(exceptions.RequestError,
-                          lambda: conn.fetch_data('journals'))
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            self.assertRaises(exceptions.RequestError,
+                              lambda: conn.fetch_data('journals'))
 
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
