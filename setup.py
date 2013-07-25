@@ -27,7 +27,7 @@ setup(
     ],
     setup_requires=["nose>=1.0", "coverage"],
     tests_require=["mocker"],
-    test_suite='nose.collector',
+    test_suite='tests',
     install_requires=['requests'],
 )
 
