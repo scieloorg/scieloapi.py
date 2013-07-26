@@ -161,12 +161,13 @@ class Client(object):
                  username,
                  api_key,
                  api_uri=None,
-                 version=None):
+                 version=None,
+                 connector_dep=Connector):
 
-        self._connector = Connector(username,
-                                    api_key,
-                                    api_uri=api_uri,
-                                    version=version)
+        self._connector = connector_dep(username,
+                                        api_key,
+                                        api_uri=api_uri,
+                                        version=version)
         self._endpoints = {}
         for ep in self._introspect_endpoints():
             self._endpoints[ep] = Endpoint(ep, self._connector)

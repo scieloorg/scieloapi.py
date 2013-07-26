@@ -23,6 +23,10 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         from scieloapi import Connector
         return Connector(*args, **kwargs)
 
+    @unittest.skip('')
+    def test_api_uri_defaults_to_manager_scielo_org(self):
+        pass
+
     def test_fetching_all_docs_of_an_endpoint(self):
         mock_httpbroker = self.mocker.mock()
 
@@ -125,39 +129,79 @@ class EndpointTests(mocker.MockerTestCase):
 
 class ClientTests(mocker.MockerTestCase):
 
-    @unittest.skip('')
+    def _makeOne(self, *args, **kwargs):
+        from scieloapi import Client
+        return Client(*args, **kwargs)
+
     def test_connector_instance_created_during_initialization(self):
-        pass
+        mock_connector = self.mocker.mock()
+        mock_connector('any.user', 'any.apikey', api_uri=None, version=None)
+        self.mocker.result(mock_connector)
+        mock_connector.get_endpoints()
+        self.mocker.result({'journals': None})
+        self.mocker.replay()
 
-    @unittest.skip('')
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=mock_connector)
+
     def test_endpoints_introspected_during_initialization(self):
-        pass
+        mock_connector = self.mocker.mock()
+        mock_connector('any.user', 'any.apikey', api_uri=None, version=None)
+        self.mocker.result(mock_connector)
+        mock_connector.get_endpoints()
+        self.mocker.result({'journals': None})
+        self.mocker.replay()
 
-    @unittest.skip('')
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=mock_connector)
+        self.assertEqual(client.endpoints, ['journals'])
+
     def test_missing_attributes_are_handled_as_endpoints(self):
-        pass
+        mock_endpoints = self.mocker.mock()
+        'journals' in mock_endpoints
+        self.mocker.result(True)
+        mock_endpoints['journals']
+        self.mocker.result('foo')
+        self.mocker.replay()
 
-    @unittest.skip('')
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=doubles.ConnectorStub)
+        with doubles.Patch(client, '_endpoints', mock_endpoints):
+            j = client.journals
+            self.assertEqual(j, 'foo')
+
     def test_unknown_missing_attribute_raises_AttributeError(self):
-        pass
+        mock_endpoints = self.mocker.mock()
+        'journals' in mock_endpoints
+        self.mocker.result(False)
+        self.mocker.replay()
 
-    @unittest.skip('')
-    def test_username_and_apikey_are_mandatory_during_initialization(self):
-        pass
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=doubles.ConnectorStub)
+        with doubles.Patch(client, '_endpoints', mock_endpoints):
+            self.assertRaises(AttributeError, lambda: client.journals)
 
-    @unittest.skip('')
+    def test_username_and_username_are_mandatory_during_initialization(self):
+        self.assertRaises(TypeError, lambda: self._makeOne('any.user'))
+
     def test_api_uri_parameterized_during_initialization(self):
-        pass
+        mock_connector = self.mocker.mock()
+        mock_connector('any.user', 'any.apikey', api_uri='http://foo.org/api/', version=None)
+        self.mocker.result(mock_connector)
+        mock_connector.get_endpoints()
+        self.mocker.result({'journals': None})
+        self.mocker.replay()
 
-    @unittest.skip('')
-    def test_api_uri_defaults_to_manager_scielo_org(self):
-        pass
+        client = self._makeOne('any.user', 'any.apikey',
+            api_uri='http://foo.org/api/', connector_dep=mock_connector)
 
-    @unittest.skip('')
     def test_version_parameterized_during_initialization(self):
-        pass
+        mock_connector = self.mocker.mock()
+        mock_connector('any.user', 'any.apikey', api_uri=None, version='vFoo')
+        self.mocker.result(mock_connector)
+        mock_connector.get_endpoints()
+        self.mocker.result({'journals': None})
+        self.mocker.replay()
 
-    @unittest.skip('')
+        client = self._makeOne('any.user', 'any.apikey',
+            version='vFoo', connector_dep=mock_connector)
+
     def test_version_restricted_to_API_VERSIONS(self):
         pass
 

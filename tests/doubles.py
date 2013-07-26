@@ -6,10 +6,10 @@ class Patch(object):
     """
     Helps patching instances to ease testing.
     """
-    def __init__(self, target_object, target_attrname, patch):
+    def __init__(self, target_object, target_attrname, patch, instance_method=False):
         self.target_object = target_object
         self.target_attrname = target_attrname
-        if callable(patch):
+        if callable(patch) and instance_method:
             self.patch = types.MethodType(patch, target_object, target_object.__class__)
         else:
             self.patch = patch
@@ -26,4 +26,12 @@ class Patch(object):
 
     def __exit__(self, *args, **kwargs):
         self._toggle()
+
+
+class ConnectorStub(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def get_endpoints(self):
+        return {'journals': None}
 
