@@ -196,6 +196,13 @@ class Client(object):
         """
         return self._endpoints.keys()
 
+    @property
+    def version(self):
+        """
+        The API version the Client instance is interfacing with.
+        """
+        return self._connector.version
+
     def fetch_relations(self, dataset):
         """
         Returns a new dataset with all relations to

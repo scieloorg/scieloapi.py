@@ -108,6 +108,23 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
             self.assertRaises(exceptions.RequestError,
                               lambda: conn.fetch_data('journals'))
 
+    def test_known_version_can_be_used(self):
+        """
+        This test needs to change a module level variable, so
+        it needs to be restored to avoid side effects on other
+        tests.
+        """
+        from scieloapi import scieloapi
+        old_api_versions = scieloapi.API_VERSIONS
+
+        scieloapi.API_VERSIONS += ('v2',)
+
+        conn = scieloapi.Connector('any.user', 'any.apikey', version='v2')
+        self.assertEqual(conn.version, 'v2')
+
+        scieloapi.API_VERSIONS = old_api_versions
+
+
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
         'title': u'ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)'
@@ -203,11 +220,30 @@ class ClientTests(mocker.MockerTestCase):
             version='vFoo', connector_dep=mock_connector)
 
     def test_version_restricted_to_API_VERSIONS(self):
-        pass
+        self.assertRaises(
+            ValueError,
+            lambda: self._makeOne('any.user', 'any.apikey', version='vFoo'))
 
-    @unittest.skip('')
     def test_missing_version_defaults_to_newest(self):
-        pass
+        from scieloapi.scieloapi import API_VERSIONS
+        newest = sorted(API_VERSIONS)[-1]
+
+        client = self._makeOne('any.user', 'any.apikey')
+        self.assertEqual(client.version, newest)
+
+    def test_known_version_can_be_used(self):
+        from scieloapi.scieloapi import API_VERSIONS
+        API_VERSIONS += ('v2',)
+
+        mock_connector = self.mocker.mock()
+        mock_connector('any.user', 'any.apikey', api_uri=None, version='v2')
+        self.mocker.result(mock_connector)
+        mock_connector.get_endpoints()
+        self.mocker.result({'journals': None})
+        self.mocker.replay()
+
+        client = self._makeOne('any.user', 'any.apikey',
+            version='v2', connector_dep=mock_connector)
 
     @unittest.skip('')
     def test_invalid_credentials_raises_Unauthorized(self):
