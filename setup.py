@@ -16,7 +16,7 @@ setup(
     license=open('LICENSE').read(),
     url="http://docs.scielo.org",
     packages=['scieloapi'],
-    package_data={'': ['LICENSE']},
+    package_data={'': ['README.md', 'HISTORY.md', 'LICENSE']},
     package_dir={'scieloapi': 'scieloapi'},
     include_package_data=True,
     classifiers=[
