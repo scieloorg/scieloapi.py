@@ -29,6 +29,7 @@ class Connector(object):
                  version=None):
         # dependencies
         self._httpbroker = httpbroker
+        self._time = time
 
         # setup
         self.api_uri = api_uri if api_uri else r'http://manager.scielo.org/api/'
@@ -62,16 +63,16 @@ class Connector(object):
 
         while True:
             try:
-                return self._httpbroker.get(self.api_uri,
-                                            endpoint=endpoint,
-                                            resource_id=resource_id,
-                                            params=kwargs)
+                response = self._httpbroker.get(self.api_uri,
+                                                endpoint=endpoint,
+                                                resource_id=resource_id,
+                                                params=kwargs)
 
             except requests.exceptions.ConnectionError as exc:
                 if err_count < 10:
                     wait_secs = err_count * 5
                     logger.info('Connection failed. Waiting %ss to retry.' % wait_secs)
-                    time.sleep(wait_secs)
+                    self._time.sleep(wait_secs)
                     err_count += 1
                     continue
                 else:
@@ -81,7 +82,9 @@ class Connector(object):
                 logger.error('Bad request: %s' % exc)
                 raise exceptions.RequestError(exc)
             else:
+                # restart error count
                 err_count = 0
+                return response
 
     def iter_docs(self, endpoint, **kwargs):
         """

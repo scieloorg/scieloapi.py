@@ -35,3 +35,9 @@ class ConnectorStub(object):
     def get_endpoints(self):
         return {'journals': None}
 
+
+class TimeStub(object):
+
+    @staticmethod
+    def sleep(*args):
+        pass

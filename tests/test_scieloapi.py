@@ -23,9 +23,9 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         from scieloapi import Connector
         return Connector(*args, **kwargs)
 
-    @unittest.skip('')
     def test_api_uri_defaults_to_manager_scielo_org(self):
-        pass
+        conn = self._makeOne('any.username', 'any.apikey')
+        self.assertTrue(conn.api_uri.startswith('http://manager.scielo.org'))
 
     def test_fetching_all_docs_of_an_endpoint(self):
         mock_httpbroker = self.mocker.mock()
@@ -47,6 +47,50 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
     def test_single_document_of_an_endpoint(self):
         mock_httpbroker = self.mocker.mock()
+
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={'username': 'any.username', 'api_key': 'any.apikey'},
+                            resource_id=1)
+        self.mocker.result(self.valid_microset)
+
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey')
+
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            res = conn.fetch_data('journals', resource_id=1)
+            self.assertIn('title', res)
+
+    def test_fetching_data_retry_excced_raises_ResourceUnavailableError(self):
+        from requests.exceptions import ConnectionError
+        from scieloapi import exceptions
+        mock_httpbroker = self.mocker.mock()
+
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={'username': 'any.username', 'api_key': 'any.apikey'},
+                            resource_id=1)
+        self.mocker.throw(ConnectionError)
+        self.mocker.count(11)
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey')
+
+        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
+            with doubles.Patch(conn, '_time', doubles.TimeStub()):
+                self.assertRaises(exceptions.ResourceUnavailableError,
+                    lambda: conn.fetch_data('journals', resource_id=1))
+
+    def test_fetching_data_retry_on_ConnectionError(self):
+        from requests.exceptions import ConnectionError
+        mock_httpbroker = self.mocker.mock()
+
+        mock_httpbroker.get('http://manager.scielo.org/api/v1/',
+                            endpoint='journals',
+                            params={'username': 'any.username', 'api_key': 'any.apikey'},
+                            resource_id=1)
+        self.mocker.throw(ConnectionError)
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
