@@ -35,6 +35,9 @@ class ConnectorStub(object):
     def get_endpoints(self):
         return {'journals': None}
 
+    def fetch_data(self, *args, **kwargs):
+        pass
+
 
 class TimeStub(object):
 

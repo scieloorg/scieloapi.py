@@ -168,6 +168,13 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
         scieloapi.API_VERSIONS = old_api_versions
 
+    def test_iteration_over_endpoint_items(self):
+        def fetch_data_stub(self, *args, **kwargs):
+            return self.valid_full_microset
+
+        conn = self._makeOne('any.username', 'any.apikey')
+        with doubles.Patch(conn, 'fetch_data', fetch_data_stub, instance_method=True):
+            res = conn.iter_docs('journals')
 
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
