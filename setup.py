@@ -7,13 +7,15 @@ except ImportError:
 
 setup(
     name="scieloapi",
-    version='0.2',
+    version='0.3',
     description="Thin wrapper around the SciELO Manager RESTful API.",
     long_description=open('README.md').read() + '\n\n' +
                      open('HISTORY.md').read(),
     author="SciELO",
     author_email="scielo-dev@googlegroups.com",
-    license=open('LICENSE').read(),
+    maintainer="Gustavo Fonseca",
+    maintainer_email="gustavo.fonseca@scielo.org",
+    license="BSD License",
     url="http://docs.scielo.org",
     packages=['scieloapi'],
     package_data={'': ['README.md', 'HISTORY.md', 'LICENSE']},
