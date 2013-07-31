@@ -21,15 +21,18 @@ class BadRequest(Exception):
     Raised on 400 HTTP status code
     """
 
+
 class Unauthorized(Exception):
     """
     Raised on 401 HTTP status code
     """
 
+
 class Forbidden(Exception):
     """
     Raised on 403 HTTP status code
     """
+
 
 class NotFound(Exception):
     """

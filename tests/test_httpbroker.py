@@ -70,3 +70,76 @@ class CheckHttpStatusTests(unittest.TestCase):
 
         self.assertIsNone(httpbroker.check_http_status(response))
 
+
+class TranslateExceptionsTests(unittest.TestCase):
+
+    def test_from_ConnectionError_to_ConnectionError(self):
+        """
+        from requests.exceptions.ConnectionError
+        to scieloapi.exceptions.ConnectionError
+        """
+        import requests
+
+        @httpbroker.translate_exceptions
+        def foo():
+            raise requests.exceptions.ConnectionError()
+
+        self.assertRaises(exceptions.ConnectionError,
+            lambda: foo())
+
+    def test_from_HTTPError_to_HTTPError(self):
+        """
+        from requests.exceptions.HTTPError
+        to scieloapi.exceptions.HTTPError
+        """
+        import requests
+
+        @httpbroker.translate_exceptions
+        def foo():
+            raise requests.exceptions.HTTPError()
+
+        self.assertRaises(exceptions.HTTPError,
+            lambda: foo())
+
+    def test_from_Timeout_to_Timeout(self):
+        """
+        from requests.exceptions.Timeout
+        to scieloapi.exceptions.Timeout
+        """
+        import requests
+
+        @httpbroker.translate_exceptions
+        def foo():
+            raise requests.exceptions.Timeout()
+
+        self.assertRaises(exceptions.Timeout,
+            lambda: foo())
+
+    def test_from_TooManyRedirects_to_HTTPError(self):
+        """
+        from requests.exceptions.TooManyRedirects
+        to scieloapi.exceptions.HTTPError
+        """
+        import requests
+
+        @httpbroker.translate_exceptions
+        def foo():
+            raise requests.exceptions.TooManyRedirects()
+
+        self.assertRaises(exceptions.HTTPError,
+            lambda: foo())
+
+    def test_from_RequestException_to_HTTPError(self):
+        """
+        from requests.exceptions.RequestException
+        to scieloapi.exceptions.HTTPError
+        """
+        import requests
+
+        @httpbroker.translate_exceptions
+        def foo():
+            raise requests.exceptions.RequestException()
+
+        self.assertRaises(exceptions.HTTPError,
+            lambda: foo())
+
