@@ -1,4 +1,67 @@
+from functools import wraps
+
 import requests
+
+import exceptions
+
+
+__all__ = ['get']
+
+
+def check_http_status(response):
+    """
+    Raises one of `scieloapi.exceptions` depending on response status-code.
+
+    ``response`` is a requests.Response instance.
+    """
+    http_status = response.status_code
+
+    if http_status == 400:
+        raise exceptions.BadRequest()
+    elif http_status == 401:
+        raise exceptions.Unauthorized()
+    elif http_status == 403:
+        raise exceptions.Forbidden()
+    elif http_status == 404:
+        raise exceptions.NotFound()
+    elif http_status == 406:
+        raise exceptions.NotAcceptable()
+    elif http_status == 500:
+        raise exceptions.InternalServerError()
+    elif http_status == 502:
+        raise exceptions.BadGateway()
+    elif http_status == 503:
+        raise exceptions.ServiceUnavailable()
+    else:
+        return None
+
+
+def translate_exceptions(func):
+    """
+    Translates all dependencies' exceptions and re-raise them as scieloapi's.
+
+    This function aims to isolate third-party dependencies from the exposed
+    API, in a way users should never import `requests` lib to handle exceptions
+    or other stuff.
+    """
+    @wraps(func)
+    def f_wrap(*args, **kwargs):
+        try:
+            resp = func(*args, **kwargs)
+        except requests.exceptions.ConnectionError as e:
+            raise exceptions.ConnectionError(e)
+        except requests.exceptions.HTTPError as e:
+            raise exceptions.HTTPError(e)
+        except requests.exceptions.Timeout as e:
+            raise exceptions.Timeout(e)
+        except requests.exceptions.TooManyRedirects as e:
+            raise exceptions.HTTPError(e)
+        except requests.exceptions.RequestException as e:
+            raise exceptions.HTTPError(e)
+        else:
+            return resp
+
+    return f_wrap
 
 
 def _make_full_url(*uri_segs):
@@ -19,6 +82,7 @@ def _make_full_url(*uri_segs):
     return full_uri
 
 
+@translate_exceptions
 def get(api_uri, endpoint=None, resource_id=None, params=None):
     """
     Dispatches an HTTP GET request to `api_uri`.
@@ -32,6 +96,9 @@ def get(api_uri, endpoint=None, resource_id=None, params=None):
 
     full_uri = _make_full_url(api_uri, endpoint, resource_id)
     resp = requests.get(full_uri, params=params)
+
+    # check if an exception should be raised based on http status code
+    check_http_status(resp)
 
     return resp.json()
 

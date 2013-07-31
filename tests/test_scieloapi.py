@@ -62,8 +62,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
             res = conn.fetch_data('journals', resource_id=1)
             self.assertIn('title', res)
 
-    def test_fetching_data_retry_excced_raises_ResourceUnavailableError(self):
-        from requests.exceptions import ConnectionError
+    def test_connection_error_fetching_data_raises_ConnectionError_after_retries(self):
         from scieloapi import exceptions
         mock_httpbroker = self.mocker.mock()
 
@@ -71,7 +70,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={'username': 'any.username', 'api_key': 'any.apikey'},
                             resource_id=1)
-        self.mocker.throw(ConnectionError)
+        self.mocker.throw(exceptions.ConnectionError)
         self.mocker.count(11)
         self.mocker.replay()
 
@@ -79,11 +78,11 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
         with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
             with doubles.Patch(conn, '_time', doubles.TimeStub()):
-                self.assertRaises(exceptions.ResourceUnavailableError,
+                self.assertRaises(exceptions.ConnectionError,
                     lambda: conn.fetch_data('journals', resource_id=1))
 
     def test_fetching_data_retry_on_ConnectionError(self):
-        from requests.exceptions import ConnectionError
+        from scieloapi.exceptions import ConnectionError
         mock_httpbroker = self.mocker.mock()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
@@ -133,8 +132,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                                   'any.apikey',
                                   version='vFoo'))
 
-    def test_unsupported_api_version_at_API_VERSIONS_raises_RequestError(self):
-        import requests
+    def test_unsupported_api_version_at_API_VERSIONS_raises_NotFound(self):
+        import scieloapi
         mock_httpbroker = self.mocker.mock()
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -143,13 +142,13 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                                 'api_key': 'any.apikey',
                             },
                             resource_id=None)
-        self.mocker.throw(requests.exceptions.HTTPError)
+        self.mocker.throw(scieloapi.exceptions.NotFound)
         self.mocker.replay()
 
         conn = self._makeOne('any.username', 'any.apikey')
 
         with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            self.assertRaises(exceptions.RequestError,
+            self.assertRaises(scieloapi.exceptions.NotFound,
                               lambda: conn.fetch_data('journals'))
 
     def test_known_version_can_be_used(self):

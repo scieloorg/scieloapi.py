@@ -44,3 +44,12 @@ class TimeStub(object):
     @staticmethod
     def sleep(*args):
         pass
+
+
+class RequestsResponseStub(object):
+    """
+    Pretend to be a requests.Response object.
+    """
+    def __init__(self, *args, **kwargs):
+        self.status_code = 200
+

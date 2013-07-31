@@ -3,8 +3,6 @@ import re
 import logging
 import time
 
-import requests #leak, httpbroker must isolate requests lib
-
 import httpbroker
 import exceptions
 
@@ -68,19 +66,16 @@ class Connector(object):
                                                 resource_id=resource_id,
                                                 params=kwargs)
 
-            except requests.exceptions.ConnectionError as exc:
+            except (exceptions.ConnectionError, exceptions.ServiceUnavailable) as e:
                 if err_count < 10:
                     wait_secs = err_count * 5
-                    logger.info('Connection failed. Waiting %ss to retry.' % wait_secs)
+                    logger.info('%s. Waiting %ss to retry.' % (e, wait_secs))
                     self._time.sleep(wait_secs)
                     err_count += 1
                     continue
                 else:
-                    logger.error('Unable to connect to resource (%s).' % exc)
-                    raise exceptions.ResourceUnavailableError(exc)
-            except requests.exceptions.HTTPError as exc:
-                logger.error('Bad request: %s' % exc)
-                raise exceptions.RequestError(exc)
+                    logger.error('%s. Unable to connect to resource.' % e)
+                    raise
             else:
                 # restart error count
                 err_count = 0
@@ -128,10 +123,7 @@ class Connector(object):
         cls = self.__class__
 
         if self.version not in cls._cache:
-            try:
-                cls._cache[self.version] = self._httpbroker.get(self.api_uri)
-            except requests.exceptions.HTTPError as exc:
-                raise exceptions.ResourceUnavailableError(exc)
+            cls._cache[self.version] = self._httpbroker.get(self.api_uri)
 
         return cls._cache[self.version]
 
