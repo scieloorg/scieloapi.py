@@ -16,6 +16,11 @@ API_VERSIONS = ('v1',)
 class Connector(object):
     """
     Encapsulates the HTTP requests layer.
+
+    :param username: valid username that has access to manager.scielo.org.
+    :param api_key: its respective api key.
+    :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
+    :param version: (optional) by default the newest version is used.
     """
     # caches endpoints definitions
     _cache = {}
@@ -50,8 +55,9 @@ class Connector(object):
         """
         Fetches the specified resource from the SciELO Manager API.
 
-        ``endpoint`` must be a valid endpoint at
-        http://manager.scielo.org/api/v1/
+        :param endpoint: a valid endpoint at http://manager.scielo.org/api/v1/
+        :param resource_id: (optional) an int representing the document.
+        :param \*\*kwargs: (optional) params to be passed as query string.
         """
         err_count = 0
 
@@ -85,11 +91,8 @@ class Connector(object):
         """
         Iterates over all documents of a given endpoint and collection.
 
-        ``endpoint`` must be a valid endpoint at
-        http://manager.scielo.org/api/v1/
-
-        ``kwargs`` are passed thru the request as query string
-        params
+        :param endpoint: must be a valid endpoint at http://manager.scielo.org/api/v1/
+        :param \*\*kwargs: are passed thru the request as query string params
 
         Note that you need a valid API KEY in order to query the
         Manager API. Read more at: http://ref.scielo.org/ddkpmx
