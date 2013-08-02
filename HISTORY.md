@@ -1,11 +1,13 @@
 History
 =======
 
-0.3
----
+0.3 (2013-08-02)
+----------------
 
 * Added more unit tests (Now at 73% of code coverage).
 * Minor adjusts at `setup.py` installation script.
+* New exceptions to represent http status codes.
+* Better documentation at `http://docs.scielo.org/projects/scieloapipy/`.
 
 
 0.2 (2013-07-26)

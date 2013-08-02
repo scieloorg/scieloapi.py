@@ -12,7 +12,7 @@ def check_http_status(response):
     """
     Raises one of `scieloapi.exceptions` depending on response status-code.
 
-    ``response`` is a requests.Response instance.
+    :param response: is a requests.Response instance.
     """
     http_status = response.status_code
 
@@ -90,6 +90,11 @@ def get(api_uri, endpoint=None, resource_id=None, params=None):
     This function is tied to some concepts of Restful interfaces
     like endpoints and resource ids. Any querystring params must
     be passed as dictionaries to `params`.
+
+    :param api_uri: e.g. http://manager.scielo.org/api/v1/
+    :param endpoint: (optional) a valid endpoint at http://manager.scielo.org/api/v1/
+    :param resource_id: (optional) an int representing the document.
+    :param params: (optional) params to be passed as query string.
     """
     if not endpoint and resource_id:
         raise ValueError('resource_id depends on an endpoint definition')
