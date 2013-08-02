@@ -129,28 +129,48 @@ class Connector(object):
 
 
 class Endpoint(object):
+    """
+    Represents an API endpoint.
+
+    :param name: the endpoint name.
+    :param connector: instance of :class:`Connector`.
+    """
     def __init__(self, name, connector):
         self.name = name
         self.connector = connector
 
     def get(self, resource_id):
+        """
+        Gets a specific document of the endpoint.
+
+        :param resource_id: an int representing the document.
+        """
         res = self.connector.fetch_data(self.name, resource_id=resource_id)
         return res
 
     def all(self):
+        """
+        Gets all documents of the endpoint.
+        """
         return self.connector.iter_docs(self.name)
 
     def filter(self, **kwargs):
+        """
+        Gets all documents of the endpoint that satisfies some criteria.
+
+        :param \*\*kwargs: filtering criteria as documented at `docs.scielo.org <http://ref.scielo.org/ph6gvk>`_
+        """
         return self.connector.iter_docs(self.name, **kwargs)
 
 
 class Client(object):
     """
-    Collection of endpoints made available in an object oriented fashion.
+    Collection of :class:`Endpoint` made available in an object oriented fashion.
 
     An instance of Client tries to figure out the available endpoints
-    for the version of the API the Client is instantiated for. If ``version``
-    is missing, the default behaviour is to use the most recent version.
+    for the version of the API the Client is instantiated for, and
+    automatically instantiates :class:`Endpoint` for each one.
+    If ``version`` is missing, the newest available will be used.
 
     :param username: valid username that has access to manager.scielo.org.
     :param api_key: its respective api key.
@@ -198,7 +218,7 @@ class Client(object):
     def endpoints(self):
         """
         Lists all available endpoints for the api version
-        the Client was created to interact.
+        the instance of :class:`Client` was created to interact.
         """
         return self._endpoints.keys()
 
@@ -254,10 +274,11 @@ class Client(object):
         """
         Gets data for resource_uri.
 
-        :param resource_uri: is a text string in the form
-        "/api/<version>/<endpoint>/<resource_id>/". The <version>
-        must match with Client's or a ValueError will be raised.
+        The <version> must match with the :class:`Client`'s instance or a
+        ValueError will be raised.
         The same goes to unknown endpoints and invalid `resource_uris`.
+
+        :param resource_uri: text string in the form `/api/<version>/<endpoint>/<resource_id>/`.
         """
         uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
         match = uri_pattern.match(resource_uri)
