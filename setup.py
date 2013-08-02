@@ -4,10 +4,12 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
+import scieloapi
+
 
 setup(
     name="scieloapi",
-    version='0.3',
+    version=scieloapi.__version__,
     description="Thin wrapper around the SciELO Manager RESTful API.",
     long_description=open('README.md').read() + '\n\n' +
                      open('HISTORY.md').read(),
