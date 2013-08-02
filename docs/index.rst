@@ -7,7 +7,7 @@ scieloapi.py
 ============
 
 Release v\ |version|.
-
+This software is licensed under `BSD License <http://opensource.org/licenses/BSD-2-Clause>`_.
 
 Usage example::
 
