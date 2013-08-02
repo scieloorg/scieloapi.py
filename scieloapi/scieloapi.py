@@ -151,6 +151,17 @@ class Client(object):
     An instance of Client tries to figure out the available endpoints
     for the version of the API the Client is instantiated for. If ``version``
     is missing, the default behaviour is to use the most recent version.
+
+    :param username: valid username that has access to manager.scielo.org.
+    :param api_key: its respective api key.
+    :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
+    :param version: (optional) by default the newest version is used.
+
+    Usage::
+
+        >>> import scieloapi
+        >>> cli = scieloapi.Client('some.user', 'some.apikey')
+        <scieloapi.scieloapi.Client object at 0x10726f9d0>
     """
     def __init__(self,
                  username,
@@ -200,8 +211,18 @@ class Client(object):
 
     def fetch_relations(self, dataset):
         """
-        Returns a new dataset with all relations to
-        resources changed by the actual resource data.
+        Fetches all records that relates to `dataset`.
+
+        Its important to note that only first-level relations will be fetched
+        in order to avoid massive data retrieval.
+
+        :param dataset: datastructure representing a record. Tipically a `dict` instance.
+
+        Usage::
+
+            >>> import scieloapi
+            >>> cli = scieloapi.Client('some.user', 'some.apikey')
+            >>> cli.fetch_relations(cli.journals.get(70))
         """
         new_dataset = {}
 
@@ -233,7 +254,7 @@ class Client(object):
         """
         Gets data for resource_uri.
 
-        `resource_uri` is a text string in the form
+        :param resource_uri: is a text string in the form
         "/api/<version>/<endpoint>/<resource_id>/". The <version>
         must match with Client's or a ValueError will be raised.
         The same goes to unknown endpoints and invalid `resource_uris`.

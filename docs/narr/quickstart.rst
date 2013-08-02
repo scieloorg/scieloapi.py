@@ -10,6 +10,7 @@ of the specified API version. The API version may be passed as keyword argument
 version is used.
 
 ::
+
     >>> client = scieloapi.Client('some.user', 'some.api_key') 
     
 
