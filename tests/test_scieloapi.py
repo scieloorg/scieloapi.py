@@ -32,35 +32,35 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={'username': 'any.username', 'api_key': 'any.apikey'},
-                            resource_id=None)
+                            params={},
+                            resource_id=None,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_full_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            res = conn.fetch_data('journals')
-            self.assertTrue('objects' in res)
-            self.assertTrue(len(res['objects']), 1)
+        res = conn.fetch_data('journals')
+        self.assertTrue('objects' in res)
+        self.assertTrue(len(res['objects']), 1)
 
     def test_single_document_of_an_endpoint(self):
         mock_httpbroker = self.mocker.mock()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={'username': 'any.username', 'api_key': 'any.apikey'},
-                            resource_id=1)
+                            params={},
+                            resource_id=1,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            res = conn.fetch_data('journals', resource_id=1)
-            self.assertIn('title', res)
+        res = conn.fetch_data('journals', resource_id=1)
+        self.assertIn('title', res)
 
     def test_connection_error_fetching_data_raises_ConnectionError_after_retries(self):
         from scieloapi import exceptions
@@ -68,18 +68,18 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={'username': 'any.username', 'api_key': 'any.apikey'},
-                            resource_id=1)
+                            params={},
+                            resource_id=1,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.throw(exceptions.ConnectionError)
         self.mocker.count(11)
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            with doubles.Patch(conn, '_time', doubles.TimeStub()):
-                self.assertRaises(exceptions.ConnectionError,
-                    lambda: conn.fetch_data('journals', resource_id=1))
+        with doubles.Patch(conn, '_time', doubles.TimeStub()):
+            self.assertRaises(exceptions.ConnectionError,
+                lambda: conn.fetch_data('journals', resource_id=1))
 
     def test_fetching_data_retry_on_ConnectionError(self):
         from scieloapi.exceptions import ConnectionError
@@ -87,23 +87,24 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={'username': 'any.username', 'api_key': 'any.apikey'},
-                            resource_id=1)
+                            params={},
+                            resource_id=1,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.throw(ConnectionError)
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={'username': 'any.username', 'api_key': 'any.apikey'},
-                            resource_id=1)
+                            params={},
+                            resource_id=1,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            res = conn.fetch_data('journals', resource_id=1)
-            self.assertIn('title', res)
+        res = conn.fetch_data('journals', resource_id=1)
+        self.assertIn('title', res)
 
     def test_fetch_data_with_querystring_params(self):
         mock_httpbroker = self.mocker.mock()
@@ -111,20 +112,18 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
                             params={
-                                'username': 'any.username',
-                                'api_key': 'any.apikey',
                                 'collection': 'saude-publica',
                             },
-                            resource_id=1)
+                            resource_id=1,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            res = conn.fetch_data('journals', resource_id=1, collection='saude-publica')
-            self.assertIn('title', res)
+        res = conn.fetch_data('journals', resource_id=1, collection='saude-publica')
+        self.assertIn('title', res)
 
     def test_unsupported_api_version_raises_ValueError(self):
         self.assertRaises(ValueError,
@@ -137,19 +136,16 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         mock_httpbroker = self.mocker.mock()
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
-                            params={
-                                'username': 'any.username',
-                                'api_key': 'any.apikey',
-                            },
-                            resource_id=None)
+                            params={},
+                            resource_id=None,
+                            auth=('any.username', 'any.apikey'))
         self.mocker.throw(scieloapi.exceptions.NotFound)
         self.mocker.replay()
 
-        conn = self._makeOne('any.username', 'any.apikey')
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        with doubles.Patch(conn, '_httpbroker', mock_httpbroker):
-            self.assertRaises(scieloapi.exceptions.NotFound,
-                              lambda: conn.fetch_data('journals'))
+        self.assertRaises(scieloapi.exceptions.NotFound,
+                          lambda: conn.fetch_data('journals'))
 
     def test_known_version_can_be_used(self):
         """

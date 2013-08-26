@@ -64,6 +64,27 @@ def translate_exceptions(func):
     return f_wrap
 
 
+def prepare_params(params):
+    """
+    Prepare params before the http request is dispatched.
+
+    The return value must be a list of doubles (tuples of lenght 2). By now,
+    the preparation step basically transforms `params` to the right return type
+    sorted by keys.
+
+    In cases where `params` is None, None must be returned.
+
+    :param params: Is key/value pair or `None`.
+    """
+    if params is None:
+        return None
+
+    if hasattr(params, 'items'):
+        params = params.items()
+
+    return sorted(params)
+
+
 def _make_full_url(*uri_segs):
     """
     Joins URI segments to produce an URL.
@@ -82,8 +103,26 @@ def _make_full_url(*uri_segs):
     return full_uri
 
 
+class ApiKeyAuth(requests.auth.AuthBase):
+    """
+    ApiKey based authentication for `requests`.
+    """
+    def __init__(self, username, api_key):
+        self.username = username
+        self.api_key = api_key
+
+    def __call__(self, r):
+        """
+        Adds the Authorization header as listed in
+        http://ref.scielo.org/ddkpmx
+        """
+        auth_string = ' ApiKey %s:%s' % (self.username, self.api_key)
+        r.headers['Authorization'] = auth_string
+        return r
+
+
 @translate_exceptions
-def get(api_uri, endpoint=None, resource_id=None, params=None):
+def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
     """
     Dispatches an HTTP GET request to `api_uri`.
 
@@ -95,12 +134,25 @@ def get(api_uri, endpoint=None, resource_id=None, params=None):
     :param endpoint: (optional) a valid endpoint at http://manager.scielo.org/api/v1/
     :param resource_id: (optional) an int representing the document.
     :param params: (optional) params to be passed as query string.
+    :param auth: (optional) a pair of `username` and `api_key`.
     """
     if not endpoint and resource_id:
         raise ValueError('resource_id depends on an endpoint definition')
 
+    if auth:
+        username, api_key = auth
+    else:
+        username = api_key = None
+
     full_uri = _make_full_url(api_uri, endpoint, resource_id)
-    resp = requests.get(full_uri, params=params)
+
+    if username and api_key:
+        resp = requests.get(full_uri,
+                            params=prepare_params(params),
+                            auth=ApiKeyAuth(username, api_key))
+    else:
+        resp = requests.get(full_uri,
+                            params=prepare_params(params))
 
     # check if an exception should be raised based on http status code
     check_http_status(resp)

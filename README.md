@@ -22,6 +22,10 @@ You can install it via `pip`, directly from the github repo:
 
     pip install -e git+git://github.com/scieloorg/scieloapi.py.git#egg=scieloapi
 
+Or from PyPi (more stable):
+
+    pip install scieloapi
+
 
 Basics
 ------

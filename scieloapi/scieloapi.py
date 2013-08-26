@@ -2,6 +2,7 @@
 import re
 import logging
 import time
+import functools
 
 import httpbroker
 import exceptions
@@ -21,6 +22,7 @@ class Connector(object):
     :param api_key: its respective api key.
     :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
     :param version: (optional) by default the newest version is used.
+    :param http_broker: (optional) a module to deal with http stuff. The reference API is implemented at :module:`httpbroker`.
     """
     # caches endpoints definitions
     _cache = {}
@@ -29,12 +31,18 @@ class Connector(object):
                  username,
                  api_key,
                  api_uri=None,
-                 version=None):
+                 version=None,
+                 http_broker=None):
         # dependencies
-        self._httpbroker = httpbroker
         self._time = time
 
+        if http_broker:
+            _httpbroker = http_broker
+        else:
+            _httpbroker = httpbroker  # module
+
         # setup
+        self._create_http_methods(_httpbroker, username, api_key)
         self.api_uri = api_uri if api_uri else r'http://manager.scielo.org/api/'
 
         if version :
@@ -46,8 +54,18 @@ class Connector(object):
             self.version = sorted(API_VERSIONS)[-1]
 
         self.username = username
-        self.api_key = api_key
         self.api_uri = self.api_uri + self.version + '/'
+
+    def _create_http_methods(self, broker, username, api_key):
+        """
+        Dynamically adds http methods bound to user credentials.
+
+        :param broker: reference to the module to be used as http broker.
+        :param username: valid username that has access to manager.scielo.org.
+        :param api_key: its respective api key.
+        """
+        bound_get = functools.partial(broker.get, auth=(username, api_key))
+        setattr(self, '_http_get', bound_get)
 
     def fetch_data(self, endpoint,
                          resource_id=None,
@@ -61,16 +79,12 @@ class Connector(object):
         """
         err_count = 0
 
-        if self.username and self.api_key:
-            kwargs['username'] = self.username
-            kwargs['api_key'] = self.api_key
-
         while True:
             try:
-                response = self._httpbroker.get(self.api_uri,
-                                                endpoint=endpoint,
-                                                resource_id=resource_id,
-                                                params=kwargs)
+                response = self._http_get(self.api_uri,
+                                          endpoint=endpoint,
+                                          resource_id=resource_id,
+                                          params=kwargs)
 
             except (exceptions.ConnectionError, exceptions.ServiceUnavailable) as e:
                 if err_count < 10:
@@ -126,7 +140,7 @@ class Connector(object):
         cls = self.__class__
 
         if self.version not in cls._cache:
-            cls._cache[self.version] = self._httpbroker.get(self.api_uri)
+            cls._cache[self.version] = self._http_get(self.api_uri)
 
         return cls._cache[self.version]
 

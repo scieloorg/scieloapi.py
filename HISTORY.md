@@ -1,6 +1,19 @@
 History
 =======
 
+0.4
+---
+
+* Params are sorted by key before the GET request is dispatched. This minor
+  change aims to improve server-side caching capabilities.
+* Minor changes to the API of the function `httpbroker.get`. It now accepts a `auth` kwarg
+  to handle server-side authentication.
+* Minor changes to `scieloapi.Connector`:
+  * A custom http broker can be passed as `http_broker` kwarg during init.
+  * Http methods are created dinamically during initialization, with user credentials bound 
+    into it. Api_key is no longer maintained by the instance.
+
+
 0.3 (2013-08-02)
 ----------------
 
