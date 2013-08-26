@@ -143,3 +143,22 @@ class TranslateExceptionsTests(unittest.TestCase):
         self.assertRaises(exceptions.HTTPError,
             lambda: foo())
 
+
+class PrepareParamsFunctionTests(unittest.TestCase):
+
+    def test_sort_dict_by_key(self):
+        params = {'username': 1, 'api_key': 2, 'c': 3}
+
+        self.assertEqual(httpbroker.prepare_params(params),
+            [('api_key', 2), ('c', 3), ('username', 1)])
+
+    def test_sort_list_of_tuples(self):
+        params = [('username', 1), ('api_key', 2), ('c', 3)]
+
+        self.assertEqual(httpbroker.prepare_params(params),
+            [('api_key', 2), ('c', 3), ('username', 1)])
+
+    def test_None_returns_None(self):
+        params = None
+
+        self.assertIsNone(httpbroker.prepare_params(params))
