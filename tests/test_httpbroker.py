@@ -163,4 +163,3 @@ class PrepareParamsFunctionTests(unittest.TestCase):
 
         self.assertIsNone(httpbroker.prepare_params(params))
 
-
