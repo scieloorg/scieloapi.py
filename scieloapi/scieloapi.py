@@ -22,7 +22,7 @@ class Connector(object):
     :param api_key: its respective api key.
     :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
     :param version: (optional) by default the newest version is used.
-    :param http_broker: (optional) a module to deal with http stuff. The reference API is implemented at :module:`httpbroker`.
+    :param http_broker: (optional) a module to deal with http stuff. The reference API is implemented at :mod:`scieloapi.httpbroker`.
     """
     # caches endpoints definitions
     _cache = {}
