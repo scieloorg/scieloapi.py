@@ -246,7 +246,7 @@ class Client(object):
         """
         return self._connector.version
 
-    def fetch_relations(self, dataset):
+    def fetch_relations(self, dataset, only=None):
         """
         Fetches all records that relates to `dataset`.
 
@@ -254,6 +254,7 @@ class Client(object):
         in order to avoid massive data retrieval.
 
         :param dataset: datastructure representing a record. Tipically a `dict` instance.
+        :param only: (optional) a collection of relations to fetch. By default, all relations are retrieved.
 
         Usage::
 
@@ -264,8 +265,8 @@ class Client(object):
         new_dataset = {}
 
         for attr_name, attr_value in dataset.items():
-            # skip fetching itself
-            if attr_name == 'resource_uri':
+            # skip fetching itself and undesired fields
+            if attr_name == 'resource_uri' or (only and attr_name not in only):
                 new_dataset[attr_name] = attr_value
             elif isinstance(attr_value, basestring):
                 try:

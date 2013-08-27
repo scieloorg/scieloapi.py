@@ -7,5 +7,5 @@ except ImportError as e:
         raise
 
 
-__version__ = '0.3'
+__version__ = '0.4'
 

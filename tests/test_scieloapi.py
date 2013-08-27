@@ -298,3 +298,68 @@ class ClientTests(mocker.MockerTestCase):
         """
         pass
 
+    def test_fetch_relations_for_one_relation(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        self.mocker.replay()
+
+        data = {'journal': '/api/v1/journals/70/'}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(client.fetch_relations(data), {'journal': {'title': 'foo'}})
+
+    def test_fetch_relations_for_all_relations(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        mock_get(mocker.ANY, '/api/v1/issues/71/')
+        self.mocker.result({'title': 'bar'})
+        self.mocker.replay()
+
+        data = {'journal': '/api/v1/journals/70/',
+                'issue': '/api/v1/issues/71/'}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data),
+                {'journal': {'title': 'foo'}, 'issue': {'title': 'bar'}})
+
+    def test_fetch_relations_for_lists(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        mock_get(mocker.ANY, '/api/v1/journals/71/')
+        self.mocker.result({'title': 'bar'})
+        self.mocker.replay()
+
+        data = {'journal': ['/api/v1/journals/70/',
+                            '/api/v1/journals/71/']}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data),
+                {'journal': [{'title': 'foo'}, {'title': 'bar'}]})
+
+    def test_fetch_relations_for_specific_relations(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        self.mocker.replay()
+
+        data = {'journal': '/api/v1/journals/70/',
+                'issue': '/api/v1/issues/71/'}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data, only=('journal',)),
+                {'journal': {'title': 'foo'}, 'issue': '/api/v1/issues/71/'})
+
