@@ -163,3 +163,36 @@ class PrepareParamsFunctionTests(unittest.TestCase):
 
         self.assertIsNone(httpbroker.prepare_params(params))
 
+
+class GetFunctionTests(mocker.MockerTestCase):
+
+    def test_user_agent_is_properly_set(self):
+        """
+        By properly I mean: scieloapi/:version, e.g.
+        scieloapi/0.4
+        """
+        import requests
+        mock_response = self.mocker.mock(requests.Response)
+        mock_response.json()
+        self.mocker.result({'title': 'foo'})
+        mock_response.status_code
+        self.mocker.result(200)
+
+        mock_requests_get = self.mocker.mock()
+        mock_requests_get('http://manager.scielo.org/api/v1/journals/70/',
+                          headers=mocker.MATCH(lambda x: x['User-Agent'].startswith('scieloapi/')),
+                          params=None)
+        self.mocker.result(mock_response)
+
+        mock_requests = self.mocker.replace('requests')
+        mock_requests.get
+        self.mocker.result(mock_requests_get)
+
+        self.mocker.replay()
+
+        self.assertEqual(
+            httpbroker.get('http://manager.scielo.org/api/v1/',
+                endpoint='journals', resource_id='70'),
+            {'title': 'foo'}
+        )
+

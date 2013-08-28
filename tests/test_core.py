@@ -20,7 +20,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
     }
 
     def _makeOne(self, *args, **kwargs):
-        from scieloapi import Connector
+        from scieloapi.core import Connector
         return Connector(*args, **kwargs)
 
     def test_api_uri_defaults_to_manager_scielo_org(self):
@@ -153,15 +153,15 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         it needs to be restored to avoid side effects on other
         tests.
         """
-        from scieloapi import scieloapi
-        old_api_versions = scieloapi.API_VERSIONS
+        from scieloapi import core
+        old_api_versions = core.API_VERSIONS
 
-        scieloapi.API_VERSIONS += ('v2',)
+        core.API_VERSIONS += ('v2',)
 
-        conn = scieloapi.Connector('any.user', 'any.apikey', version='v2')
+        conn = core.Connector('any.user', 'any.apikey', version='v2')
         self.assertEqual(conn.version, 'v2')
 
-        scieloapi.API_VERSIONS = old_api_versions
+        core.API_VERSIONS = old_api_versions
 
     def test_iteration_over_endpoint_items(self):
         def fetch_data_stub(self, *args, **kwargs):
@@ -177,7 +177,7 @@ class EndpointTests(mocker.MockerTestCase):
     }
 
     def _makeOne(self, *args, **kwargs):
-        from scieloapi import Endpoint
+        from scieloapi.core import Endpoint
         return Endpoint(*args, **kwargs)
 
     def test_get_valid_resource(self):
@@ -193,7 +193,7 @@ class EndpointTests(mocker.MockerTestCase):
 class ClientTests(mocker.MockerTestCase):
 
     def _makeOne(self, *args, **kwargs):
-        from scieloapi import Client
+        from scieloapi.core import Client
         return Client(*args, **kwargs)
 
     def test_connector_instance_created_during_initialization(self):
@@ -271,14 +271,14 @@ class ClientTests(mocker.MockerTestCase):
             lambda: self._makeOne('any.user', 'any.apikey', version='vFoo'))
 
     def test_missing_version_defaults_to_newest(self):
-        from scieloapi.scieloapi import API_VERSIONS
+        from scieloapi.core import API_VERSIONS
         newest = sorted(API_VERSIONS)[-1]
 
         client = self._makeOne('any.user', 'any.apikey')
         self.assertEqual(client.version, newest)
 
     def test_known_version_can_be_used(self):
-        from scieloapi.scieloapi import API_VERSIONS
+        from scieloapi.core import API_VERSIONS
         API_VERSIONS += ('v2',)
 
         mock_connector = self.mocker.mock()

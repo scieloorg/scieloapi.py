@@ -12,6 +12,9 @@ History
   * A custom http broker can be passed as `http_broker` kwarg during init.
   * Http methods are created dinamically during initialization, with user credentials bound 
     into it. Api_key is no longer maintained by the instance.
+* `Client.fetch_relations` now accepts the param `only` to specify a subset of relations to fetch.
+* Now the User-Agent is set to `scieloapi/:version`.
+* The module `scieloapi.scieloapi` was renamed to `scieloapi.core` to make things clearer.
 
 
 0.3 (2013-08-02)

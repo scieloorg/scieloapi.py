@@ -3,6 +3,7 @@ from functools import wraps
 import requests
 
 import exceptions
+from scieloapi import __user_agent__
 
 
 __all__ = ['get']
@@ -146,13 +147,17 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
 
     full_uri = _make_full_url(api_uri, endpoint, resource_id)
 
+    # custom headers
+    headers = {'User-Agent': __user_agent__}
+
+    optionals = {}
     if username and api_key:
-        resp = requests.get(full_uri,
-                            params=prepare_params(params),
-                            auth=ApiKeyAuth(username, api_key))
-    else:
-        resp = requests.get(full_uri,
-                            params=prepare_params(params))
+        optionals['auth'] = ApiKeyAuth(username, api_key)
+
+    resp = requests.get(full_uri,
+                        headers=headers,
+                        params=prepare_params(params),
+                        **optionals)
 
     # check if an exception should be raised based on http status code
     check_http_status(resp)
