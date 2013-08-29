@@ -1,64 +1,76 @@
-class ConnectionError(Exception):
+class APIError(Exception):
+    """
+    Base class for all API exceptions
+    """
+
+
+class ConnectionError(APIError):
     """
     Raised on network problems, e.g. DNS failures, refused connections and so.
     """
 
 
-class HTTPError(Exception):
+class HTTPError(APIError):
     """
     Raised on invalid HTTP responses.
     """
 
 
-class Timeout(Exception):
+class Timeout(APIError):
     """
     Raised on request timeouts.
     """
 
 
-class BadRequest(Exception):
+class BadRequest(APIError):
     """
     Raised on 400 HTTP status code
     """
 
 
-class Unauthorized(Exception):
+class Unauthorized(APIError):
     """
     Raised on 401 HTTP status code
     """
 
 
-class Forbidden(Exception):
+class Forbidden(APIError):
     """
     Raised on 403 HTTP status code
     """
 
 
-class NotFound(Exception):
+class NotFound(APIError):
     """
     Raised on 404 HTTP status code
     """
 
 
-class NotAcceptable(Exception):
+class MethodNotAllowed(APIError):
+    """
+    Raised on 405 HTTP status code
+    """
+
+
+class NotAcceptable(APIError):
     """
     Raised on 406 HTTP status code
     """
 
 
-class InternalServerError(Exception):
+class InternalServerError(APIError):
     """
     Raised on 500 HTTP status code
     """
 
 
-class BadGateway(Exception):
+class BadGateway(APIError):
     """
     Raised on 502 HTTP status code
     """
 
 
-class ServiceUnavailable(Exception):
+class ServiceUnavailable(APIError):
     """
     Raised on 503 HTTP status code
     """

@@ -36,6 +36,13 @@ class CheckHttpStatusTests(unittest.TestCase):
         self.assertRaises(exceptions.NotFound,
             lambda: httpbroker.check_http_status(response))
 
+    def test_405_raises_NotFound(self):
+        response = doubles.RequestsResponseStub()
+        response.status_code = 405
+
+        self.assertRaises(exceptions.MethodNotAllowed,
+            lambda: httpbroker.check_http_status(response))
+
     def test_406_raises_NotAcceptable(self):
         response = doubles.RequestsResponseStub()
         response.status_code = 406
@@ -194,5 +201,91 @@ class GetFunctionTests(mocker.MockerTestCase):
             httpbroker.get('http://manager.scielo.org/api/v1/',
                 endpoint='journals', resource_id='70'),
             {'title': 'foo'}
+        )
+
+
+class PostFunctionTests(mocker.MockerTestCase):
+
+    def test_user_agent_is_properly_set(self):
+        """
+        By properly I mean: scieloapi/:version, e.g.
+        scieloapi/0.4
+        """
+        import requests
+        mock_response = self.mocker.mock(requests.Response)
+        mock_response.headers
+        self.mocker.result({'location': 'http://manager.scielo.org/api/v1/journals/4/'})
+        mock_response.status_code
+        self.mocker.result(201)
+        self.mocker.count(2)
+
+        mock_requests_post = self.mocker.mock()
+        mock_requests_post(url='http://manager.scielo.org/api/v1/journals/',
+                           headers=mocker.MATCH(lambda x: x['User-Agent'].startswith('scieloapi/')),
+                           data='{"title": "foo"}')
+        self.mocker.result(mock_response)
+
+        mock_requests = self.mocker.replace('requests')
+        mock_requests.post
+        self.mocker.result(mock_requests_post)
+
+        self.mocker.replay()
+
+        self.assertEqual(
+            httpbroker.post('http://manager.scielo.org/api/v1/',
+                endpoint='journals', data='{"title": "foo"}'),
+            'http://manager.scielo.org/api/v1/journals/4/'
+        )
+
+    def test_unexpected_status_code_raises_APIError(self):
+        import requests
+        mock_response = self.mocker.mock(requests.Response)
+        mock_response.status_code
+        self.mocker.result(410)
+        self.mocker.count(3)
+
+        mock_requests_post = self.mocker.mock()
+        mock_requests_post(url='http://manager.scielo.org/api/v1/journals/',
+                           headers=mocker.ANY,
+                           data='{"title": "foo"}')
+        self.mocker.result(mock_response)
+
+        mock_requests = self.mocker.replace('requests')
+        mock_requests.post
+        self.mocker.result(mock_requests_post)
+
+        self.mocker.replay()
+
+        self.assertRaises(exceptions.APIError,
+                          lambda: httpbroker.post('http://manager.scielo.org/api/v1/',
+                                                  endpoint='journals',
+                                                  data='{"title": "foo"}')
+        )
+
+    def test_location_header_is_returned(self):
+        import requests
+        mock_response = self.mocker.mock(requests.Response)
+        mock_response.headers
+        self.mocker.result({'location': 'http://manager.scielo.org/api/v1/journals/4/'})
+        mock_response.status_code
+        self.mocker.result(201)
+        self.mocker.count(2)
+
+        mock_requests_post = self.mocker.mock()
+        mock_requests_post(url='http://manager.scielo.org/api/v1/journals/',
+                           headers=mocker.ANY,
+                           data='{"title": "foo"}')
+        self.mocker.result(mock_response)
+
+        mock_requests = self.mocker.replace('requests')
+        mock_requests.post
+        self.mocker.result(mock_requests_post)
+
+        self.mocker.replay()
+
+        self.assertEqual(
+            httpbroker.post('http://manager.scielo.org/api/v1/',
+                endpoint='journals', data='{"title": "foo"}'),
+            'http://manager.scielo.org/api/v1/journals/4/'
         )
 

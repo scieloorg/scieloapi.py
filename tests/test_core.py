@@ -253,7 +253,7 @@ class EndpointTests(mocker.MockerTestCase):
     def test_post_uses_post_data_method(self):
         mock_connector = self.mocker.mock()
         mock_connector.post_data('journals', {'title': 'Foo'})
-        self.mocker.result('4')
+        self.mocker.result('http://manager.scielo.org/api/v1/journals/4/')
         self.mocker.replay()
 
         journal_ep = self._makeOne('journals', mock_connector)

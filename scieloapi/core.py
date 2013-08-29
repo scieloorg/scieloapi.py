@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 ITEMS_PER_REQUEST = 50
 API_VERSIONS = ('v1',)
+RESOURCE_PATH_PATTERN = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
 
 
 class Connector(object):
@@ -151,8 +152,8 @@ class Connector(object):
         """
         Creates a new resource at `endpoint` with `data`.
 
-        :param endpoint:
-        :param data:
+        :param endpoint: must be a valid endpoint at http://manager.scielo.org/api/v1/
+        :param data: json serializable Python datastructures.
         :returns: created resource url.
         """
         return self._http_post(self.api_uri, data, endpoint=endpoint)
@@ -199,7 +200,13 @@ class Endpoint(object):
         :param data: serializable python data structures.
         :returns: id of the new resource.
         """
-        return self.connector.post_data(self.name, data)
+        resp = self.connector.post_data(self.name, data)
+        match = RESOURCE_PATH_PATTERN.search(resp)
+        if match:
+            match_group = match.groups()
+            return match_group[2]
+        else:
+            raise exceptions.APIError('Unknown url: %s' % resp)
 
 
 class Client(object):
@@ -320,8 +327,7 @@ class Client(object):
 
         :param resource_uri: text string in the form `/api/<version>/<endpoint>/<resource_id>/`.
         """
-        uri_pattern = re.compile(r'/api/(\w+)/(\w+)/(\d+)/')
-        match = uri_pattern.match(resource_uri)
+        match = RESOURCE_PATH_PATTERN.match(resource_uri)
         if match:
             match_group = match.groups()
             try:

@@ -1,3 +1,5 @@
+import json
+
 from functools import wraps
 
 import requests
@@ -25,6 +27,8 @@ def check_http_status(response):
         raise exceptions.Forbidden()
     elif http_status == 404:
         raise exceptions.NotFound()
+    elif http_status == 405:
+        raise exceptions.MethodNotAllowed()
     elif http_status == 406:
         raise exceptions.NotAcceptable()
     elif http_status == 500:
@@ -84,6 +88,20 @@ def prepare_params(params):
         params = params.items()
 
     return sorted(params)
+
+
+def prepare_data(data):
+    """
+    Prepare data to be dispatched.
+
+    If `data` is a byte string, nothing is done, else `data` is
+    encoded as JSON.
+
+    :param data: json serializable data
+    """
+    prepared = data if isinstance(data, basestring) else json.dumps(data)
+    return prepared
+
 
 
 def _make_full_url(*uri_segs):
@@ -174,10 +192,35 @@ def post(api_uri, data, endpoint=None, auth=None):
     returned.
 
     :param api_uri: e.g. http://manager.scielo.org/api/v1/
-    :param data: json serializable Python datastructures
+    :param data: json serializable Python datastructures.
     :param endpoint: (optional) a valid endpoint at http://manager.scielo.org/api/v1/
     :param auth: (optional) a pair of `username` and `api_key`.
-    :returns:
+    :returns: newly created resource url
     """
-    pass
+    if auth:
+        username, api_key = auth
+    else:
+        username = api_key = None
+
+    full_url = _make_full_url(api_uri, endpoint)
+
+    # custom headers
+    headers = {'User-Agent': __user_agent__}
+
+    optionals = {}
+    if username and api_key:
+        optionals['auth'] = ApiKeyAuth(username, api_key)
+
+    resp = requests.post(url=full_url,
+                         data=prepare_data(data),
+                         headers=headers,
+                         **optionals)
+
+    # check if an exception should be raised based on http status code
+    check_http_status(resp)
+
+    if resp.status_code != 201:
+        raise exceptions.APIError('The server gone nuts: %s' % resp.status_code)
+
+    return resp.headers['location']
 

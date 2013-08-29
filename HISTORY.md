@@ -15,6 +15,8 @@ History
 * `Client.fetch_relations` now accepts the param `only` to specify a subset of relations to fetch.
 * Now the User-Agent is set to `scieloapi/:version`.
 * The module `scieloapi.scieloapi` was renamed to `scieloapi.core` to make things clearer.
+* Added POST method capabilities on endpoints.
+* Added the exception `exceptions.MethodNotAllowed` to represent 405 status code.
 
 
 0.3 (2013-08-02)
