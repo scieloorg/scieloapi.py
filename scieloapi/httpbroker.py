@@ -6,7 +6,7 @@ import exceptions
 from scieloapi import __user_agent__
 
 
-__all__ = ['get']
+__all__ = ['get', 'post']
 
 
 def check_http_status(response):
@@ -163,4 +163,21 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
     check_http_status(resp)
 
     return resp.json()
+
+
+def post(api_uri, data, endpoint=None, auth=None):
+    """
+    Dispatches an HTTP POST request to `api_uri`, with `data`.
+
+    This function is tied to some concepts of Restful interfaces
+    like endpoints. A new resource is created and its URL is
+    returned.
+
+    :param api_uri: e.g. http://manager.scielo.org/api/v1/
+    :param data: json serializable Python datastructures
+    :param endpoint: (optional) a valid endpoint at http://manager.scielo.org/api/v1/
+    :param auth: (optional) a pair of `username` and `api_key`.
+    :returns:
+    """
+    pass
 

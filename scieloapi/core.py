@@ -65,7 +65,10 @@ class Connector(object):
         :param api_key: its respective api key.
         """
         bound_get = functools.partial(broker.get, auth=(username, api_key))
+        bound_post = functools.partial(broker.post, auth=(username, api_key))
+
         setattr(self, '_http_get', bound_get)
+        setattr(self, '_http_post', bound_post)
 
     def fetch_data(self, endpoint,
                          resource_id=None,
@@ -144,6 +147,16 @@ class Connector(object):
 
         return cls._cache[self.version]
 
+    def post_data(self, endpoint, data):
+        """
+        Creates a new resource at `endpoint` with `data`.
+
+        :param endpoint:
+        :param data:
+        :returns: created resource url.
+        """
+        return self._http_post(self.api_uri, data, endpoint=endpoint)
+
 
 class Endpoint(object):
     """
@@ -178,6 +191,15 @@ class Endpoint(object):
         :param \*\*kwargs: filtering criteria as documented at `docs.scielo.org <http://ref.scielo.org/ph6gvk>`_
         """
         return self.connector.iter_docs(self.name, **kwargs)
+
+    def post(self, data):
+        """
+        Creates a new resource
+
+        :param data: serializable python data structures.
+        :returns: id of the new resource.
+        """
+        return self.connector.post_data(self.name, data)
 
 
 class Client(object):

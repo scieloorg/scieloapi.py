@@ -53,3 +53,8 @@ class RequestsResponseStub(object):
     def __init__(self, *args, **kwargs):
         self.status_code = 200
 
+
+httpbroker_stub = types.ModuleType('httpbroker')
+httpbroker_stub.get = lambda *args, **kwargs: {}
+httpbroker_stub.post = lambda *args, **kwargs: 'http://manager.scielo.org/api/v1/journals/32/'
+

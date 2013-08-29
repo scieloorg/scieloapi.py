@@ -2,7 +2,7 @@
 import unittest
 import mocker
 
-from scieloapi import exceptions
+from scieloapi import exceptions, httpbroker
 import doubles
 
 
@@ -28,7 +28,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         self.assertTrue(conn.api_uri.startswith('http://manager.scielo.org'))
 
     def test_fetching_all_docs_of_an_endpoint(self):
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -46,7 +47,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         self.assertTrue(len(res['objects']), 1)
 
     def test_single_document_of_an_endpoint(self):
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -63,8 +65,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         self.assertIn('title', res)
 
     def test_connection_error_fetching_data_raises_ConnectionError_after_retries(self):
-        from scieloapi import exceptions
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -73,6 +75,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             auth=('any.username', 'any.apikey'))
         self.mocker.throw(exceptions.ConnectionError)
         self.mocker.count(11)
+
         self.mocker.replay()
 
         conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
@@ -83,7 +86,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
 
     def test_fetching_data_retry_on_ConnectionError(self):
         from scieloapi.exceptions import ConnectionError
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -107,7 +111,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         self.assertIn('title', res)
 
     def test_fetch_data_with_querystring_params(self):
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
 
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
@@ -132,19 +137,20 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                                   version='vFoo'))
 
     def test_unsupported_api_version_at_API_VERSIONS_raises_NotFound(self):
-        import scieloapi
-        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker = self.mocker.proxy(httpbroker)
+        mocker.expect(mock_httpbroker.post).passthrough()
+
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
                             params={},
                             resource_id=None,
                             auth=('any.username', 'any.apikey'))
-        self.mocker.throw(scieloapi.exceptions.NotFound)
+        self.mocker.throw(exceptions.NotFound)
         self.mocker.replay()
 
         conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
 
-        self.assertRaises(scieloapi.exceptions.NotFound,
+        self.assertRaises(exceptions.NotFound,
                           lambda: conn.fetch_data('journals'))
 
     def test_known_version_can_be_used(self):
@@ -171,6 +177,34 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         with doubles.Patch(conn, 'fetch_data', fetch_data_stub, instance_method=True):
             res = conn.iter_docs('journals')
 
+    def test_create_http_methods_adds_http_get_method_to_instance(self):
+        conn = self._makeOne('any.username', 'any.apikey')
+        delattr(conn, '_http_get')
+
+        conn._create_http_methods(doubles.httpbroker_stub, 'any.user', 'any.apikey')
+        self.assertTrue(hasattr(conn, '_http_get'))
+
+    def test_post_data_with_valid_data(self):
+        mock_httpbroker = self.mocker.mock()
+        mock_httpbroker_post = self.mocker.mock()
+
+        mock_httpbroker_post('http://manager.scielo.org/api/v1/',
+                             {'title': 'Foo'},
+                             endpoint='journals',
+                             auth=('any.username', 'any.apikey'))
+        self.mocker.result('http://manager.scielo.org/api/v1/journals/4/')
+
+        mocker.expect(mock_httpbroker.get).result(lambda *args, **kwargs: None)
+        mocker.expect(mock_httpbroker.post).result(mock_httpbroker_post)
+
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey', http_broker=mock_httpbroker)
+        self.assertEqual(
+            conn.post_data('journals', {'title': 'Foo'}),
+            'http://manager.scielo.org/api/v1/journals/4/')
+
+
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
         'title': u'ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)'
@@ -180,7 +214,7 @@ class EndpointTests(mocker.MockerTestCase):
         from scieloapi.core import Endpoint
         return Endpoint(*args, **kwargs)
 
-    def test_get_valid_resource(self):
+    def test_get_uses_fetch_data_method(self):
         mock_connector = self.mocker.mock()
         mock_connector.fetch_data('journals', resource_id=1)
         self.mocker.result(self.valid_microset)
@@ -188,6 +222,42 @@ class EndpointTests(mocker.MockerTestCase):
 
         journal_ep = self._makeOne('journals', mock_connector)
         self.assertEqual(journal_ep.get(1), self.valid_microset)
+
+    def test_get_invalid_resource_raises_NotFound(self):
+        mock_connector = self.mocker.mock()
+        mock_connector.fetch_data('journals', resource_id=1)
+        self.mocker.throw(exceptions.NotFound())
+        self.mocker.replay()
+
+        journal_ep = self._makeOne('journals', mock_connector)
+        self.assertRaises(exceptions.NotFound, lambda: journal_ep.get(1))
+
+    def test_all_uses_iter_docs_method(self):
+        mock_connector = self.mocker.mock()
+        mock_connector.iter_docs('journals')
+        self.mocker.result((x for x in range(2)))
+        self.mocker.replay()
+
+        journal_ep = self._makeOne('journals', mock_connector)
+        self.assertEqual(list(journal_ep.all()), [0, 1])
+
+    def test_filter_uses_iter_docs_method(self):
+        mock_connector = self.mocker.mock()
+        mock_connector.iter_docs('journals', collection='saude-publica')
+        self.mocker.result((x for x in range(2)))
+        self.mocker.replay()
+
+        journal_ep = self._makeOne('journals', mock_connector)
+        self.assertEqual(list(journal_ep.filter(collection='saude-publica')), [0, 1])
+
+    def test_post_uses_post_data_method(self):
+        mock_connector = self.mocker.mock()
+        mock_connector.post_data('journals', {'title': 'Foo'})
+        self.mocker.result('4')
+        self.mocker.replay()
+
+        journal_ep = self._makeOne('journals', mock_connector)
+        self.assertEqual(journal_ep.post({'title': 'Foo'}), '4')
 
 
 class ClientTests(mocker.MockerTestCase):
