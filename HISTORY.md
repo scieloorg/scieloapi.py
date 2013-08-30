@@ -1,8 +1,8 @@
 History
 =======
 
-0.4
----
+0.4 (2013-08-30)
+----------------
 
 * Params are sorted by key before the GET request is dispatched. This minor
   change aims to improve server-side caching capabilities.
