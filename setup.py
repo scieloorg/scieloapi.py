@@ -11,7 +11,7 @@ install_requires = [
 
 setup(
     name="scieloapi",
-    version='0.4',
+    version='0.5',
     description="Thin wrapper around the SciELO Manager RESTful API.",
     long_description=open('README.md').read() + '\n\n' +
                      open('HISTORY.md').read(),
