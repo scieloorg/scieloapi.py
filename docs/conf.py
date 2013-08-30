@@ -18,8 +18,6 @@ import sys, os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 import scieloapi
-from scieloapi import __version__
-
 import mock
 
 class Mock(object):
@@ -74,7 +72,7 @@ copyright = u'2013, SciELO'
 # built documents.
 #
 # The short X.Y version.
-version = __version__
+version = scieloapi.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 

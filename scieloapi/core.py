@@ -4,8 +4,8 @@ import logging
 import time
 import functools
 
-import httpbroker
-import exceptions
+from . import httpbroker
+from . import exceptions
 
 
 logger = logging.getLogger(__name__)

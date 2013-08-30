@@ -1,11 +1,10 @@
 import json
-
 from functools import wraps
 
 import requests
 
-import exceptions
-from scieloapi import __user_agent__
+from . import exceptions
+from . import __user_agent__
 
 
 __all__ = ['get', 'post']

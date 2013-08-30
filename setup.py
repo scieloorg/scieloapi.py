@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 try:
-    from setuptools import setup, Extension
+    from setuptools import setup
 except ImportError:
-    from distutils.core import setup, Extension
+    from distutils.core import setup
 
-import scieloapi
 
+install_requires = [
+    'requests==1.2.3',
+]
 
 setup(
     name="scieloapi",
-    version=scieloapi.__version__,
+    version='0.4',
     description="Thin wrapper around the SciELO Manager RESTful API.",
     long_description=open('README.md').read() + '\n\n' +
                      open('HISTORY.md').read(),
@@ -32,6 +34,6 @@ setup(
     setup_requires=["nose>=1.0", "coverage"],
     tests_require=["mocker"],
     test_suite='tests',
-    install_requires=['requests'],
+    install_requires=install_requires,
 )
 
