@@ -4,6 +4,8 @@ History
 0.5
 ---
 
+* Added `tox.ini` to help the porting to Python3.3.
+
 
 0.4 (2013-08-30)
 ----------------
