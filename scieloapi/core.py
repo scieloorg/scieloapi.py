@@ -319,11 +319,11 @@ class Client(object):
 
     def get(self, resource_uri):
         """
-        Gets data for resource_uri.
+        Gets resource_uri.
 
-        The <version> must match with the :class:`Client`'s instance or a
-        ValueError will be raised.
-        The same goes to unknown endpoints and invalid `resource_uris`.
+        Gets the given resource in a opinionated fashion in terms of the 
+        `version` passed during client's instantiation. The `endpoint` must also 
+        be available for the version the client is bound to.
 
         :param resource_uri: text string in the form `/api/<version>/<endpoint>/<resource_id>/`.
         """
