@@ -203,6 +203,12 @@ class GetFunctionTests(mocker.MockerTestCase):
             {'title': 'foo'}
         )
 
+    def test_resource_id_makes_endpoint_mandatory(self):
+        self.assertRaises(
+            ValueError,
+            lambda: httpbroker.get('http://manager.scielo.org/api/v1/', resource_id='70')
+        )
+
 
 class PostFunctionTests(mocker.MockerTestCase):
 
@@ -288,4 +294,17 @@ class PostFunctionTests(mocker.MockerTestCase):
                 endpoint='journals', data='{"title": "foo"}'),
             'http://manager.scielo.org/api/v1/journals/4/'
         )
+
+
+class MakeFullUrlFunctionTests(unittest.TestCase):
+
+    def test_missing_trailing_slash(self):
+        path_segments = ['http://manager.scielo.org', 'api', 'v1', 'journals']
+        self.assertEqual(httpbroker._make_full_url(*path_segments),
+            'http://manager.scielo.org/api/v1/journals/')
+
+    def test_missing_scheme(self):
+        path_segments = ['manager.scielo.org', 'api', 'v1', 'journals']
+        self.assertEqual(httpbroker._make_full_url(*path_segments),
+            'http://manager.scielo.org/api/v1/journals/')
 

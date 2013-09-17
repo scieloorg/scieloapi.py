@@ -321,20 +321,24 @@ class Client(object):
         """
         Gets resource_uri.
 
-        Gets the given resource in a opinionated fashion in terms of the 
-        `version` passed during client's instantiation. The `endpoint` must also 
+        Gets the given resource in a opinionated fashion in terms of the
+        `version` passed during client's instantiation. The `endpoint` must also
         be available for the version the client is bound to.
 
         :param resource_uri: text string in the form `/api/<version>/<endpoint>/<resource_id>/`.
         """
         match = RESOURCE_PATH_PATTERN.match(resource_uri)
         if match:
-            match_group = match.groups()
+            version, endpoint, resource_id = match.groups()
+
+            if version != self.version:
+                raise ValueError('Resource and Client version must match')
+
             try:
-                return getattr(self, match_group[1]).get(match_group[2])
+                return getattr(self, endpoint).get(resource_id)
             except AttributeError:
                 # AttributeError is raised if getattr fails to lookup the endpoint
-                raise ValueError('Unknown endpoint %s' % match_group[1])
+                raise ValueError('Unknown endpoint %s' % endpoint)
         else:
             raise ValueError('Invalid resource_uri')
 

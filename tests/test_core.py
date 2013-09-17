@@ -204,6 +204,63 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
             conn.post_data('journals', {'title': 'Foo'}),
             'http://manager.scielo.org/api/v1/journals/4/')
 
+    def test_iter_docs_starts_with_zeroed_offset(self):
+        mock_fetch_data = self.mocker.mock()
+        mock_fetch_data(mocker.ANY, 'journals', offset=0, limit=mocker.ANY)
+        self.mocker.result(self.valid_full_microset)
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey')
+        with doubles.Patch(conn, 'fetch_data', mock_fetch_data, instance_method=True):
+            for doc in conn.iter_docs('journals'):
+                self.assertTrue(doc)
+
+    def test_iter_docs_offset_moves_forward(self):
+        from scieloapi.core import ITEMS_PER_REQUEST as ITEMS
+
+        first_valid_full_microset = {
+            'objects': [
+                {
+                    'title': u'ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)'
+                },
+            ],
+            'meta': {'next': 'bla'},
+        }
+
+        mock_fetch_data = self.mocker.mock()
+        mock_fetch_data(mocker.ANY, 'journals', offset=0, limit=ITEMS)
+        self.mocker.result(first_valid_full_microset)
+        mock_fetch_data(mocker.ANY, 'journals', offset=ITEMS, limit=ITEMS)
+        self.mocker.result(self.valid_full_microset)
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey')
+        with doubles.Patch(conn, 'fetch_data', mock_fetch_data, instance_method=True):
+            for doc in conn.iter_docs('journals'):
+                self.assertTrue(doc)
+
+    def test_iter_docs_ignores_trashed_items(self):
+        first_valid_full_microset = {
+            'objects': [
+                {
+                    'title': u'ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)',
+                    'is_trashed': True,
+                },
+            ],
+            'meta': {'next': 'bla'},
+        }
+
+        mock_fetch_data = self.mocker.mock()
+        mock_fetch_data(mocker.ANY, 'journals', offset=mocker.ANY, limit=mocker.ANY)
+        self.mocker.result(first_valid_full_microset)
+        mock_fetch_data(mocker.ANY, 'journals', offset=mocker.ANY, limit=mocker.ANY)
+        self.mocker.result(self.valid_full_microset)
+        self.mocker.replay()
+
+        conn = self._makeOne('any.username', 'any.apikey')
+        with doubles.Patch(conn, 'fetch_data', mock_fetch_data, instance_method=True):
+            self.assertEqual(len(list(conn.iter_docs('journals'))), 1)
+
 
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
@@ -258,6 +315,14 @@ class EndpointTests(mocker.MockerTestCase):
 
         journal_ep = self._makeOne('journals', mock_connector)
         self.assertEqual(journal_ep.post({'title': 'Foo'}), '4')
+
+    def test_post_uses_post_data_method(self):
+        stub_connector = doubles.ConnectorStub()
+        stub_connector.post_data = lambda *args: '/non/sense/resource/path/'
+
+        journal_ep = self._makeOne('journals', stub_connector)
+        self.assertRaises(exceptions.APIError,
+            lambda: journal_ep.post({'title': 'Foo'}))
 
 
 class ClientTests(mocker.MockerTestCase):
@@ -361,13 +426,6 @@ class ClientTests(mocker.MockerTestCase):
         client = self._makeOne('any.user', 'any.apikey',
             version='v2', connector_dep=mock_connector)
 
-    @unittest.skip('')
-    def test_invalid_credentials_raises_Unauthorized(self):
-        """
-        See https://github.com/scieloorg/scieloapi.py/issues/1
-        """
-        pass
-
     def test_fetch_relations_for_one_relation(self):
         stub_connector = doubles.ConnectorStub
         mock_get = self.mocker.mock()
@@ -432,4 +490,91 @@ class ClientTests(mocker.MockerTestCase):
             self.assertEqual(
                 client.fetch_relations(data, only=('journal',)),
                 {'journal': {'title': 'foo'}, 'issue': '/api/v1/issues/71/'})
+
+    def test_fetch_relations_skip_non_conforming_urls_on_lists(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        mock_get(mocker.ANY, '/api/v2/journals/71/')
+        self.mocker.throw(ValueError)
+        self.mocker.replay()
+
+        data = {'journal': ['/api/v1/journals/70/',
+                            '/api/v2/journals/71/']}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data),
+                {'journal': [{'title': 'foo'}, '/api/v2/journals/71/']})
+
+    def test_fetch_relations_skip_non_conforming_urls_on_scalar(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        mock_get(mocker.ANY, '/api/v2/journals/71/')
+        self.mocker.throw(ValueError)
+        self.mocker.replay()
+
+        data = {'journal1': '/api/v1/journals/70/',
+                'journal2': '/api/v2/journals/71/'}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data),
+                {'journal1': {'title': 'foo'}, 'journal2': '/api/v2/journals/71/'})
+
+    def test_fetch_relations_skip_scalars(self):
+        stub_connector = doubles.ConnectorStub
+        mock_get = self.mocker.mock()
+        mock_get(mocker.ANY, '/api/v1/journals/70/')
+        self.mocker.result({'title': 'foo'})
+        self.mocker.replay()
+
+        data = {'journal1': '/api/v1/journals/70/',
+                'foo': 5}
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'get', mock_get, instance_method=True):
+            self.assertEqual(
+                client.fetch_relations(data),
+                {'journal1': {'title': 'foo'}, 'foo': 5})
+
+    def test_get(self):
+        stub_connector = doubles.ConnectorStub
+        stub_connector.version = 'v1'
+        mock_journals = self.mocker.mock()
+        mock_journals.get('20')
+        self.mocker.result({'title': 'bla'})
+        self.mocker.replay()
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        client.journals = mock_journals
+
+        self.assertEqual(client.get('/api/v1/journals/20/'), {'title': 'bla'})
+
+    def test_get_version_check(self):
+        stub_connector = doubles.ConnectorStub
+        stub_connector.version = 'v2'
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        self.assertRaises(ValueError, lambda: client.get('/api/v3/journals/20/'))
+
+    def test_get_raises_ValueError_for_unknown_endpoints(self):
+        stub_connector = doubles.ConnectorStub
+        stub_connector.version = 'v1'
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+
+        self.assertRaises(ValueError, lambda: client.get('/api/v1/foo/20/'))
+
+    def test_get_raises_ValueError_for_unknown_resource_uri(self):
+        stub_connector = doubles.ConnectorStub
+        stub_connector.version = 'v1'
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+
+        self.assertRaises(ValueError, lambda: client.get('/api/some/resource/'))
 
