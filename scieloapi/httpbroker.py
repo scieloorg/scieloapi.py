@@ -9,6 +9,8 @@ from . import __user_agent__
 
 __all__ = ['get', 'post']
 
+DEFAULT_SCHEME = 'http'
+
 
 def check_http_status(response):
     """
@@ -115,8 +117,8 @@ def _make_full_url(*uri_segs):
 
     if not full_uri.endswith('/'):
         full_uri += '/'
-    if not full_uri.startswith('http://'):
-        full_uri = 'http://' + full_uri
+    if not full_uri.startswith('http'):
+        full_uri = DEFAULT_SCHEME + '://' + full_uri
 
     return full_uri
 
@@ -171,6 +173,9 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
     if username and api_key:
         optionals['auth'] = ApiKeyAuth(username, api_key)
 
+    if full_uri.startswith('https'):
+        optionals['verify'] = False
+
     resp = requests.get(full_uri,
                         headers=headers,
                         params=prepare_params(params),
@@ -209,6 +214,9 @@ def post(api_uri, data, endpoint=None, auth=None):
     optionals = {}
     if username and api_key:
         optionals['auth'] = ApiKeyAuth(username, api_key)
+
+    if full_url.startswith('https'):
+        optionals['verify'] = False
 
     resp = requests.post(url=full_url,
                          data=prepare_data(data),
