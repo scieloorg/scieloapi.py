@@ -142,7 +142,7 @@ class ApiKeyAuth(requests.auth.AuthBase):
 
 
 @translate_exceptions
-def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
+def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None, check_ca=False):
     """
     Dispatches an HTTP GET request to `api_uri`.
 
@@ -155,6 +155,7 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
     :param resource_id: (optional) an int representing the document.
     :param params: (optional) params to be passed as query string.
     :param auth: (optional) a pair of `username` and `api_key`.
+    :param check_ca: (optional) if certification authority should be checked during ssl sessions. Defaults to `False`.
     """
     if not endpoint and resource_id:
         raise ValueError('resource_id depends on an endpoint definition')
@@ -174,7 +175,7 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
         optionals['auth'] = ApiKeyAuth(username, api_key)
 
     if full_uri.startswith('https'):
-        optionals['verify'] = False
+        optionals['verify'] = check_ca
 
     resp = requests.get(full_uri,
                         headers=headers,
@@ -187,7 +188,7 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None):
     return resp.json()
 
 
-def post(api_uri, data, endpoint=None, auth=None):
+def post(api_uri, data, endpoint=None, auth=None, check_ca=False):
     """
     Dispatches an HTTP POST request to `api_uri`, with `data`.
 
@@ -199,6 +200,7 @@ def post(api_uri, data, endpoint=None, auth=None):
     :param data: json serializable Python datastructures.
     :param endpoint: (optional) a valid endpoint at http://manager.scielo.org/api/v1/
     :param auth: (optional) a pair of `username` and `api_key`.
+    :param check_ca: (optional) if certification authority should be checked during ssl sessions. Defaults to `False`.
     :returns: newly created resource url
     """
     if auth:
@@ -216,7 +218,7 @@ def post(api_uri, data, endpoint=None, auth=None):
         optionals['auth'] = ApiKeyAuth(username, api_key)
 
     if full_url.startswith('https'):
-        optionals['verify'] = False
+        optionals['verify'] = check_ca
 
     resp = requests.post(url=full_url,
                          data=prepare_data(data),

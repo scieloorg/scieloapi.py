@@ -3,7 +3,7 @@ import unittest
 import mocker
 
 from scieloapi import exceptions, httpbroker
-import doubles
+from . import doubles
 
 
 class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
@@ -34,6 +34,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         mock_httpbroker.get('http://manager.scielo.org/api/v1/',
                             endpoint='journals',
                             params={},
+                            check_ca=mocker.ANY,
                             resource_id=None,
                             auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_full_microset)
@@ -54,6 +55,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={},
                             resource_id=1,
+                            check_ca=mocker.ANY,
                             auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
@@ -72,7 +74,8 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={},
                             resource_id=1,
-                            auth=('any.username', 'any.apikey'))
+                            auth=('any.username', 'any.apikey'),
+                            check_ca=mocker.ANY)
         self.mocker.throw(exceptions.ConnectionError)
         self.mocker.count(11)
 
@@ -93,6 +96,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={},
                             resource_id=1,
+                            check_ca=mocker.ANY,
                             auth=('any.username', 'any.apikey'))
         self.mocker.throw(ConnectionError)
 
@@ -100,6 +104,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={},
                             resource_id=1,
+                            check_ca=mocker.ANY,
                             auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
@@ -120,6 +125,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                                 'collection': 'saude-publica',
                             },
                             resource_id=1,
+                            check_ca=mocker.ANY,
                             auth=('any.username', 'any.apikey'))
         self.mocker.result(self.valid_microset)
 
@@ -144,6 +150,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
                             endpoint='journals',
                             params={},
                             resource_id=None,
+                            check_ca=mocker.ANY,
                             auth=('any.username', 'any.apikey'))
         self.mocker.throw(exceptions.NotFound)
         self.mocker.replay()
@@ -191,6 +198,7 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         mock_httpbroker_post('http://manager.scielo.org/api/v1/',
                              {'title': 'Foo'},
                              endpoint='journals',
+                             check_ca=mocker.ANY,
                              auth=('any.username', 'any.apikey'))
         self.mocker.result('http://manager.scielo.org/api/v1/journals/4/')
 
@@ -260,6 +268,10 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         conn = self._makeOne('any.username', 'any.apikey')
         with doubles.Patch(conn, 'fetch_data', mock_fetch_data, instance_method=True):
             self.assertEqual(len(list(conn.iter_docs('journals'))), 1)
+
+    def test_check_ca_disabled_by_default(self):
+        conn = self._makeOne('any.username', 'any.apikey')
+        self.assertFalse(conn.check_ca)
 
 
 class EndpointTests(mocker.MockerTestCase):
@@ -333,7 +345,8 @@ class ClientTests(mocker.MockerTestCase):
 
     def test_connector_instance_created_during_initialization(self):
         mock_connector = self.mocker.mock()
-        mock_connector('any.user', 'any.apikey', api_uri=None, version=None)
+        mock_connector('any.user', 'any.apikey', api_uri=None,
+            version=None, check_ca=mocker.ANY)
         self.mocker.result(mock_connector)
         mock_connector.get_endpoints()
         self.mocker.result({'journals': None})
@@ -343,7 +356,8 @@ class ClientTests(mocker.MockerTestCase):
 
     def test_endpoints_introspected_during_initialization(self):
         mock_connector = self.mocker.mock()
-        mock_connector('any.user', 'any.apikey', api_uri=None, version=None)
+        mock_connector('any.user', 'any.apikey', api_uri=None,
+            version=None, check_ca=mocker.ANY)
         self.mocker.result(mock_connector)
         mock_connector.get_endpoints()
         self.mocker.result({'journals': None})
@@ -380,7 +394,8 @@ class ClientTests(mocker.MockerTestCase):
 
     def test_api_uri_parameterized_during_initialization(self):
         mock_connector = self.mocker.mock()
-        mock_connector('any.user', 'any.apikey', api_uri='http://foo.org/api/', version=None)
+        mock_connector('any.user', 'any.apikey', api_uri='http://foo.org/api/',
+            version=None, check_ca=mocker.ANY)
         self.mocker.result(mock_connector)
         mock_connector.get_endpoints()
         self.mocker.result({'journals': None})
@@ -391,7 +406,8 @@ class ClientTests(mocker.MockerTestCase):
 
     def test_version_parameterized_during_initialization(self):
         mock_connector = self.mocker.mock()
-        mock_connector('any.user', 'any.apikey', api_uri=None, version='vFoo')
+        mock_connector('any.user', 'any.apikey', api_uri=None,
+            version='vFoo', check_ca=mocker.ANY)
         self.mocker.result(mock_connector)
         mock_connector.get_endpoints()
         self.mocker.result({'journals': None})
@@ -417,7 +433,8 @@ class ClientTests(mocker.MockerTestCase):
         API_VERSIONS += ('v2',)
 
         mock_connector = self.mocker.mock()
-        mock_connector('any.user', 'any.apikey', api_uri=None, version='v2')
+        mock_connector('any.user', 'any.apikey', api_uri=None,
+            version='v2', check_ca=mocker.ANY)
         self.mocker.result(mock_connector)
         mock_connector.get_endpoints()
         self.mocker.result({'journals': None})

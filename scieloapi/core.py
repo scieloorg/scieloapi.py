@@ -24,16 +24,13 @@ class Connector(object):
     :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
     :param version: (optional) by default the newest version is used.
     :param http_broker: (optional) a module to deal with http stuff. The reference API is implemented at :mod:`scieloapi.httpbroker`.
+    :param check_ca: (optional) if certification authority should be checked during ssl sessions. Defaults to `False`.
     """
     # caches endpoints definitions
     _cache = {}
 
-    def __init__(self,
-                 username,
-                 api_key,
-                 api_uri=None,
-                 version=None,
-                 http_broker=None):
+    def __init__(self, username, api_key, api_uri=None,
+                 version=None, http_broker=None, check_ca=False):
         # dependencies
         self._time = time
 
@@ -43,7 +40,7 @@ class Connector(object):
             _httpbroker = httpbroker  # module
 
         # setup
-        self._create_http_methods(_httpbroker, username, api_key)
+        self.check_ca = check_ca
         self.api_uri = api_uri if api_uri else r'http://manager.scielo.org/api/'
 
         if version :
@@ -57,6 +54,9 @@ class Connector(object):
         self.username = username
         self.api_uri = self.api_uri + self.version + '/'
 
+        # dynamic http methods creation
+        self._create_http_methods(_httpbroker, username, api_key)
+
     def _create_http_methods(self, broker, username, api_key):
         """
         Dynamically adds http methods bound to user credentials.
@@ -65,8 +65,10 @@ class Connector(object):
         :param username: valid username that has access to manager.scielo.org.
         :param api_key: its respective api key.
         """
-        bound_get = functools.partial(broker.get, auth=(username, api_key))
-        bound_post = functools.partial(broker.post, auth=(username, api_key))
+        bound_get = functools.partial(broker.get, auth=(username, api_key),
+            check_ca=self.check_ca)
+        bound_post = functools.partial(broker.post, auth=(username, api_key),
+            check_ca=self.check_ca)
 
         setattr(self, '_http_get', bound_get)
         setattr(self, '_http_post', bound_post)
@@ -222,6 +224,7 @@ class Client(object):
     :param api_key: its respective api key.
     :param api_uri: (optional) if connecting to a non official instance of `SciELO Manager <https://github.com/scieloorg/SciELO-Manager>`_
     :param version: (optional) by default the newest version is used.
+    :param check_ca: (optional) if certification authority should be checked during ssl sessions. Defaults to `False`.
 
     Usage::
 
@@ -229,17 +232,14 @@ class Client(object):
         >>> cli = scieloapi.Client('some.user', 'some.apikey')
         <scieloapi.scieloapi.Client object at 0x10726f9d0>
     """
-    def __init__(self,
-                 username,
-                 api_key,
-                 api_uri=None,
-                 version=None,
-                 connector_dep=Connector):
+    def __init__(self, username, api_key, api_uri=None,
+                 version=None, connector_dep=Connector, check_ca=False):
 
         self._connector = connector_dep(username,
                                         api_key,
                                         api_uri=api_uri,
-                                        version=version)
+                                        version=version,
+                                        check_ca=check_ca)
         self._endpoints = {}
         for ep in self._introspect_endpoints():
             self._endpoints[ep] = Endpoint(ep, self._connector)
