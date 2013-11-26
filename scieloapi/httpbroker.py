@@ -1,5 +1,6 @@
 import json
 from functools import wraps
+import logging
 
 import requests
 
@@ -10,6 +11,7 @@ from . import __user_agent__
 __all__ = ['get', 'post']
 
 DEFAULT_SCHEME = 'http'
+logger = logging.getLogger(__name__)
 
 
 def check_http_status(response):
@@ -19,6 +21,8 @@ def check_http_status(response):
     :param response: is a requests.Response instance.
     """
     http_status = response.status_code
+
+    logger.debug('Response status code is %s' % http_status)
 
     if http_status == 400:
         raise exceptions.BadRequest()
@@ -177,6 +181,9 @@ def get(api_uri, endpoint=None, resource_id=None, params=None, auth=None, check_
     if full_uri.startswith('https'):
         optionals['verify'] = check_ca
 
+    logger.debug('Sending a GET request to %s with headers %s and params %s %s' %
+        (full_uri, headers, params, optionals))
+
     resp = requests.get(full_uri,
                         headers=headers,
                         params=prepare_params(params),
@@ -211,7 +218,8 @@ def post(api_uri, data, endpoint=None, auth=None, check_ca=False):
     full_url = _make_full_url(api_uri, endpoint)
 
     # custom headers
-    headers = {'User-Agent': __user_agent__}
+    headers = {'User-Agent': __user_agent__,
+               'Content-Type': 'application/json'}
 
     optionals = {}
     if username and api_key:
@@ -220,8 +228,12 @@ def post(api_uri, data, endpoint=None, auth=None, check_ca=False):
     if full_url.startswith('https'):
         optionals['verify'] = check_ca
 
+    prepared_data = prepare_data(data)
+    logger.debug('Sending a POST request to %s with headers %s, data %s and params %s' %
+        (full_url, headers, prepared_data, optionals))
+
     resp = requests.post(url=full_url,
-                         data=prepare_data(data),
+                         data=prepared_data,
                          headers=headers,
                          **optionals)
 
@@ -230,6 +242,8 @@ def post(api_uri, data, endpoint=None, auth=None, check_ca=False):
 
     if resp.status_code != 201:
         raise exceptions.APIError('The server gone nuts: %s' % resp.status_code)
+
+    logger.info('Newly created resource at %s' % resp.headers['location'])
 
     return resp.headers['location']
 

@@ -248,6 +248,8 @@ class PostFunctionTests(mocker.MockerTestCase):
         mock_response = self.mocker.mock(requests.Response)
         mock_response.headers
         self.mocker.result({'location': 'http://manager.scielo.org/api/v1/journals/4/'})
+        self.mocker.count(2)
+
         mock_response.status_code
         self.mocker.result(201)
         self.mocker.count(2)
@@ -255,6 +257,38 @@ class PostFunctionTests(mocker.MockerTestCase):
         mock_requests_post = self.mocker.mock()
         mock_requests_post(url='http://manager.scielo.org/api/v1/journals/',
                            headers=mocker.MATCH(lambda x: x['User-Agent'].startswith('scieloapi/')),
+                           data='{"title": "foo"}')
+        self.mocker.result(mock_response)
+
+        mock_requests = self.mocker.replace('requests')
+        mock_requests.post
+        self.mocker.result(mock_requests_post)
+
+        self.mocker.replay()
+
+        self.assertEqual(
+            httpbroker.post('http://manager.scielo.org/api/v1/',
+                endpoint='journals', data='{"title": "foo"}'),
+            'http://manager.scielo.org/api/v1/journals/4/'
+        )
+
+    def test_content_type_is_properly_set(self):
+        """
+        Content-Type header must be application/json
+        """
+        import requests
+        mock_response = self.mocker.mock(requests.Response)
+        mock_response.headers
+        self.mocker.result({'location': 'http://manager.scielo.org/api/v1/journals/4/'})
+        self.mocker.count(2)
+
+        mock_response.status_code
+        self.mocker.result(201)
+        self.mocker.count(2)
+
+        mock_requests_post = self.mocker.mock()
+        mock_requests_post(url='http://manager.scielo.org/api/v1/journals/',
+                           headers=mocker.MATCH(lambda x: x['Content-Type'] == 'application/json'),
                            data='{"title": "foo"}')
         self.mocker.result(mock_response)
 
@@ -300,6 +334,8 @@ class PostFunctionTests(mocker.MockerTestCase):
         mock_response = self.mocker.mock(requests.Response)
         mock_response.headers
         self.mocker.result({'location': 'http://manager.scielo.org/api/v1/journals/4/'})
+        self.mocker.count(2)
+
         mock_response.status_code
         self.mocker.result(201)
         self.mocker.count(2)

@@ -5,7 +5,8 @@ History
 ---
 
 * Added `tox.ini` to help the porting to Python3.3.
-* Support for https (without verifiying CA)
+* Support for https (without verifiying CA).
+* Added `Content-Type: application/json` HTTP header to all post requests.
 
 
 0.4 (2013-08-30)
