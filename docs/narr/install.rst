@@ -38,3 +38,13 @@ or install it into your site-packages easily::
 
     $ python setup.py install
 
+
+Settings up the logger handler
+==============================
+
+It is expected that the application using `scieloapi` defines a logger for `scieloapi`, e.g.::
+
+    logging.getLogger('scieloapi').addHandler(logging.StreamHandler())
+
+See the official `docs <http://docs.python.org/2.7/howto/logging.html#configuring-logging>`_ for more info.
+
