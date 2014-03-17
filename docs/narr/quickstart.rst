@@ -22,7 +22,7 @@ Listing available endpoints::
 
 Listing all items of an endpoint::
 
-    >>> for journal in client.journals.all(): print journal['title']
+    >>> for journal in client.query('journals').all(): print journal['title']
     ...
     Acta Médica Costarricense
     Acta Pediátrica Costarricense
@@ -40,7 +40,7 @@ Listing all items of an endpoint::
 
 Listing items matching some params::
 
-    >>> for journal in client.journals.filter(collection='saude-publica'): print journal['title']
+    >>> for journal in client.query('journals').filter(collection='saude-publica'): print journal['title']
     ...
     Annali dell'Istituto Superiore di Sanità
     Bulletin of the World Health Organization
@@ -56,7 +56,7 @@ Listing items matching some params::
 
 Getting a specific item::
 
-    >>> journal = client.journals.get(62)
+    >>> journal = client.query('journals').get(62)
     >>> journal['title']
     u'Acta M\xe9dica Costarricense'
     >>>

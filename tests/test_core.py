@@ -273,6 +273,13 @@ class ConnectorHttpBrokerCollaborationTests(mocker.MockerTestCase):
         conn = self._makeOne('any.username', 'any.apikey')
         self.assertFalse(conn.check_ca)
 
+    def test_missing_version_defaults_to_newest(self):
+        from scieloapi import core
+        newest = sorted(core.API_VERSIONS)[-1]
+
+        conn = core.Connector('any.user', 'any.apikey')
+        self.assertEqual(conn.version, newest)
+
 
 class EndpointTests(mocker.MockerTestCase):
     valid_microset = {
@@ -421,13 +428,6 @@ class ClientTests(mocker.MockerTestCase):
             ValueError,
             lambda: self._makeOne('any.user', 'any.apikey', version='vFoo'))
 
-    def test_missing_version_defaults_to_newest(self):
-        from scieloapi.core import API_VERSIONS
-        newest = sorted(API_VERSIONS)[-1]
-
-        client = self._makeOne('any.user', 'any.apikey')
-        self.assertEqual(client.version, newest)
-
     def test_known_version_can_be_used(self):
         from scieloapi.core import API_VERSIONS
         API_VERSIONS += ('v2',)
@@ -568,10 +568,16 @@ class ClientTests(mocker.MockerTestCase):
         self.mocker.result({'title': 'bla'})
         self.mocker.replay()
 
-        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
-        client.journals = mock_journals
+        def dummy_query(inst, endpoint):
+            # be sure the endpoint is correct
+            self.assertEquals(endpoint, 'journals')
+            return mock_journals
 
-        self.assertEqual(client.get('/api/v1/journals/20/'), {'title': 'bla'})
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
+        with doubles.Patch(client, 'query', dummy_query, instance_method=True):
+            self.assertEqual(
+                client.get('/api/v1/journals/20/'),
+                {'title': 'bla'})
 
     def test_get_version_check(self):
         stub_connector = doubles.ConnectorStub
@@ -594,4 +600,27 @@ class ClientTests(mocker.MockerTestCase):
         client = self._makeOne('any.user', 'any.apikey', connector_dep=stub_connector)
 
         self.assertRaises(ValueError, lambda: client.get('/api/some/resource/'))
+
+    def test_querying_endpoints(self):
+        mock_endpoints = self.mocker.mock()
+        'journals' in mock_endpoints
+        self.mocker.result(True)
+        mock_endpoints['journals']
+        self.mocker.result('foo')
+        self.mocker.replay()
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=doubles.ConnectorStub)
+        with doubles.Patch(client, '_endpoints', mock_endpoints):
+            j = client.query('journals')
+            self.assertEqual(j, 'foo')
+
+    def test_query_raises_ValueError_for_unknown_endpoints(self):
+        mock_endpoints = self.mocker.mock()
+        'journals' in mock_endpoints
+        self.mocker.result(False)
+        self.mocker.replay()
+
+        client = self._makeOne('any.user', 'any.apikey', connector_dep=doubles.ConnectorStub)
+        with doubles.Patch(client, '_endpoints', mock_endpoints):
+            self.assertRaises(ValueError, lambda: client.query('journals'))
 

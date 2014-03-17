@@ -4,6 +4,8 @@ History
 0.6
 ---
 
+* Added `Client.query` method to query a given endpoint.
+
 
 0.5 (2014-02-10)
 ----------------

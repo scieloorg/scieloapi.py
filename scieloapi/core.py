@@ -231,6 +231,8 @@ class Client(object):
         >>> import scieloapi
         >>> cli = scieloapi.Client('some.user', 'some.apikey')
         <scieloapi.scieloapi.Client object at 0x10726f9d0>
+        >>> cli.query('journals').all()
+        <generator object iter_docs at 0x10fd59730>
     """
     def __init__(self, username, api_key, api_uri=None,
                  version=None, connector_dep=Connector, check_ca=False):
@@ -256,6 +258,7 @@ class Client(object):
         i.e. Client.journals.all()
         """
         if name in self._endpoints:
+            logger.warning('DEPRECATION WARNING! Use the `query` method for endpoint lookups.')
             return self._endpoints[name]
         else:
             raise AttributeError()
@@ -334,11 +337,19 @@ class Client(object):
             if version != self.version:
                 raise ValueError('Resource and Client version must match')
 
-            try:
-                return getattr(self, endpoint).get(resource_id)
-            except AttributeError:
-                # AttributeError is raised if getattr fails to lookup the endpoint
-                raise ValueError('Unknown endpoint %s' % endpoint)
+            return self.query(endpoint).get(resource_id)
         else:
             raise ValueError('Invalid resource_uri')
+
+    def query(self, endpoint):
+        """
+        Query an endpoint.
+
+        :param endpoint: string of the endpoint's name. A complete list of
+        valid endpoints can be got at :attr:`Client.endpoints`.
+        """
+        if endpoint in self._endpoints:
+            return self._endpoints[endpoint]
+        else:
+            raise ValueError('Unknown endpoint %s.' % endpoint)
 

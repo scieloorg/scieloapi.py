@@ -15,7 +15,7 @@ Usage example::
 
     >>> client = scieloapi.Client('some.user', 'some.api_key')
     
-    >>> for journal in client.journals.all():
+    >>> for journal in client.query('journals').all():
     ...    print journal['id'], journal['title']
 
 
